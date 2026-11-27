@@ -1,0 +1,54 @@
+---
+title: "Decode JSON without implicit coercion"
+sidebarTitle: "JSON decoding"
+description: "Strict native values, explicit presence, owning results and bounded parsing."
+keywords: ["JSON", "Zigil", "decoding"]
+---
+
+Call `decodeJson(Rule, allocator, bytes, options)`. Always call `deinit` on the
+returned result, including invalid and malformed outcomes. The result owns all
+strings, collections and issue paths; you can release the source bytes immediately.
+Move the result rather than copying its owning handle.
+
+`outcome.valid` contains the native value; `outcome.invalid` contains an Issue;
+`outcome.malformed` contains a byte offset. Zig errors report operational failure,
+including OutOfMemory, allocation quota exhaustion, resource limits and unsupported
+types. Custom validator errors propagate unchanged. Partial output never escapes.
+The compiled `examples/json.zig` demonstrates this contract.
+
+## Default policy
+
+Required fields must be present, including fields with Zig defaults or native
+optional types. Unknown and duplicate keys are rejected. Duplicates are compared
+after JSON unescaping, so differently escaped identical names still conflict.
+Duplicate findings currently identify the document root; native shape and domain
+findings include field/index paths. No jsonParse hooks execute implicitly.
+
+Native `?T` permits explicit null. Use `Presence(T)` with a `Field(Child, options)`
+rule to preserve missing, explicit null, and present values separately. Field
+options default to `optional = false` and `nullable = false`. False, zero and an
+empty string remain present values. No automatic defaults or string coercion occur.
+
+JSON numbers keep their decimal spelling until conversion. Integral decimals and
+exponents convert to native integers exactly; fractional values and overflow fail.
+No intermediate binary float is used. Floats reject overflow and underflow. The
+default `float_rounding = .exact` rejects rounding, for example decimal 0.1 to f64.
+Choose `.nearest` explicitly when normal native rounding is desired. Exact 0.5
+requires no such option. Numeric processing defaults to 4,096 significant decimal
+digits and a scale magnitude of 10,000; exceeding those bounds is an operational
+NumericLimitExceeded error. Native float precision still limits exact conversion.
+
+## Resource limits
+
+`json.Options` defaults to 1 MiB input, container depth 64, 100,000 scanner tokens,
+10,000 members per container, 65,536 bytes per string/number token and 16 MiB of
+cumulative successful underlying allocation requests. A scanner pass checks syntax
+and limits before the owning value tree is constructed. The configured maximum
+depth cannot exceed 256. Allocation budgets include arena overhead and result state;
+actual backing allocator metadata is outside that accounting. They are separate
+from OutOfMemory and are enforced before each underlying allocation request.
+
+Native conversion uses the validation work budget, followed by domain validation.
+A malformed syntax offset identifies the scanner position; it is not a raw input
+excerpt. JSON parsing reuses std.json rather than introducing another JSON parser.
+Binary byte strings are a native validation domain; JSON strings must be valid UTF-8.

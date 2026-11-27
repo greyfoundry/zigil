@@ -10,4 +10,7 @@
   Callers now use `try` or `catch`. Path exhaustion is `error.PathCapacityExceeded`,
   not an invalid-data issue code. No released version used the earlier contract.
 
+- Add strict owning JSON decoding, explicit missing/null/value presence,
+  exact decimal integer conversion and opt-in float rounding.
+
 No release or 1.0 readiness is claimed.

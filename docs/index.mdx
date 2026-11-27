@@ -22,6 +22,6 @@ Zig already checks native field types, numeric widths and enum types. Zigil adds
 constraints such as a nonempty name, a port range or a maximum collection size.
 It does not make invalid pointers safe or replace a decoder for untrusted bytes.
 
-JSON/configuration decoding, union schemas, accumulated errors, JSON Schema
-generation and OpenAPI integration are planned work. Use the standard library to
-decode data before passing native values to this foundation.
+Strict owning JSON decoding is implemented; read [the decoding contract](/decoding).
+Configuration adapters, union schemas, composition, JSON Schema generation and
+OpenAPI integration remain later milestones.

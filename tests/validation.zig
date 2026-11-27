@@ -276,3 +276,7 @@ test "issues do not borrow decoded input after parser cleanup" {
     try strings("name", issue.path[0].field);
     try strings("length must be at least 1", issue.message);
 }
+
+test {
+    _ = @import("json.zig");
+}

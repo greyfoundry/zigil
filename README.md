@@ -74,9 +74,10 @@ For another build graph, add this checkout as a Zig package dependency named
 - Custom predicates may return `bool` or an error union of `bool`; operational
   errors propagate. They own their effects and must not retain borrowed input.
 
-Parsing/coercion, tagged-union schemas, accumulated errors, JSON Schema and OpenAPI
-generation are outside this foundation. Use standard-library decoding before
-validation. Zigil cannot repair invalid pointers, undefined data or unsafe casts.
+Strict owning JSON decoding is available through `decodeJson`; see the
+[decoding contract](docs/decoding.mdx) and compiled `examples/json.zig`.
+Tagged-union schemas, accumulated errors, JSON Schema and OpenAPI generation
+remain later milestones. Zigil cannot repair invalid pointers, undefined data or unsafe casts.
 
 Read the [rule contracts](docs/validation-semantics.mdx), [ownership](docs/errors-ownership.mdx),
 [design decisions](docs/design.mdx), [compatibility](COMPATIBILITY.md), and

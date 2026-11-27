@@ -22,8 +22,8 @@ No compatibility shim, support for older compilers, or nightly support is provid
 Native values are validated without coercion. String length means bytes. Float
 bounds are inclusive and finite. Enum rules reject undeclared tags of
 non-exhaustive enums. `Optional` represents native `?T`, so absent versus explicit
-null is not a distinction in this layer. Parsing, tagged-union validation, error
-accumulation, JSON Schema and OpenAPI generation remain outside this foundation.
+null is not a distinction in this layer. Strict JSON decoding is implemented. Tagged-union validation, error accumulation,
+JSON Schema and OpenAPI generation remain later milestones.
 
 Before changing a public contract, update examples, regression tests, ownership
 documentation and the roadmap. No performance benchmarks have been established.

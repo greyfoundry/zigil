@@ -1,4 +1,5 @@
 const z = @import("zigil");
+const std = @import("std");
 
 const Config = struct { workers: u16, names: []const []const u8 };
 const Rule = z.Struct(Config, .{
@@ -7,6 +8,9 @@ const Rule = z.Struct(Config, .{
 });
 
 pub fn main() !void {
+    var decoded = try z.decodeJson(Rule, std.heap.page_allocator, "{\"workers\":4,\"names\":[\"consumer\"]}", .{});
+    defer decoded.deinit();
+    if (decoded.outcome != .valid) return error.InvalidDecodedValue;
     var path: [2]z.Segment = undefined;
     if ((try z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path)) != null)
         return error.UnexpectedIssue;

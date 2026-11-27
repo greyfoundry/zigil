@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) void {
     check.dependOn(&tests.step);
     const examples = b.step("examples", "Compile all public examples");
     const run_examples = b.step("run-examples", "Run all public examples");
-    inline for (.{"basic"}) |name| {
+    inline for (.{ "basic", "json" }) |name| {
         const exe = b.addExecutable(.{
             .name = name,
             .root_module = b.createModule(.{
