@@ -1,0 +1,8 @@
+.{
+    .name = .zigil,
+    .version = "0.0.0",
+    .fingerprint = 0x8ecd97c2936384c4,
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{},
+    .paths = .{ "build.zig", "build.zig.zon", "src", "examples", "LICENSE", "NOTICE", "README.md" },
+}

@@ -1,0 +1,48 @@
+---
+title: "Run the first validation example"
+sidebarTitle: "Quickstart"
+description: "Build Zigil's example and import its module from a separate Zig project."
+keywords: ["Zigil", "installation", "example"]
+---
+
+Use Zig 0.17.1. Clone the repository and check out the exact reviewed commit you
+intend to use; the default branch may contain only the bootstrap until the
+foundation review is merged. From the foundation checkout, run:
+
+```sh
+zig build test
+zig build run-examples
+```
+
+The compiled `examples/basic.zig` validates a `User` struct. The same source is
+included in the repository README. Its invalid empty name produces:
+
+```text
+too_short: length must be at least 1
+```
+
+## Use it in another project
+
+For local development, add a `zigil` dependency pointing to your foundation
+checkout. Run the following from your consumer project, replacing the path with
+your actual checkout path:
+
+```sh
+zig fetch --save=zigil /absolute/path/to/zigil
+```
+
+Zig records the package content hash. In your build graph, obtain
+`b.dependency("zigil", .{ .target = target, .optimize = optimize })` and add its
+`module("zigil")` to the consuming module's imports under the name `zigil`.
+The repository's `tests/consumer/build.zig` is a compiled example of this wiring.
+
+For a mutable local path dependency rather than a cached package, use Zig's
+`.path` dependency syntax in your consumer's `build.zig.zon`.
+
+The public import is `@import("zigil")`. Call
+`validate(Rule, value, path_buffer)`: `null` means success; an `Issue` describes
+the first failure. Inspect or copy the issue's path before reusing the buffer.
+See [ownership](/errors-ownership) for those lifetimes and [rules](/validation-semantics) for constructors.
+
+There is no published release URL to install yet. Pin a reviewed commit for shared
+builds rather than depending on a moving branch.

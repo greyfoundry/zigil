@@ -1,0 +1,6 @@
+---
+description: Canonical Zigil engineering instructions
+alwaysApply: true
+---
+Read root AGENTS.md and the relevant .agents/skills/ guide. Keep engineering rules
+there rather than duplicating them in tool-specific instructions.

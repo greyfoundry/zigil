@@ -1,0 +1,26 @@
+---
+title: "Validate native Zig values with Zigil"
+sidebarTitle: "Introduction"
+description: "Add value constraints and structured failure paths to native Zig types."
+keywords: ["Zig", "validation", "Zigil"]
+---
+
+Zigil checks value constraints on native Zig values. You keep your structs and
+choose compile-time rules for their fields. Validation returns the first issue
+with field and index segments in caller-owned storage.
+
+The foundation covers strings, integers, finite floats, booleans, enum subsets,
+optionals, structs, arrays, slices and custom predicates. Built-in rules allocate
+no heap memory, never transform input, and require no runtime dependencies.
+The API is experimental; there are no releases yet.
+
+Start with the [compiled example](/quickstart), then read the
+[rule contracts](/validation-semantics) and [ownership requirements](/errors-ownership).
+
+Zig already checks native field types, numeric widths and enum types. Zigil adds
+constraints such as a nonempty name, a port range or a maximum collection size.
+It does not make invalid pointers safe or replace a decoder for untrusted bytes.
+
+JSON/configuration decoding, union schemas, accumulated errors, JSON Schema
+generation and OpenAPI integration are planned work. Use the standard library to
+decode data before passing native values to this foundation.

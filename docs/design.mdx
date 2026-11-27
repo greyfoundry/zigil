@@ -1,0 +1,72 @@
+---
+title: "Why rules reuse native Zig types"
+sidebarTitle: "Design"
+description: "The foundation's type, ownership and decoding boundaries and their sources."
+keywords: ["Zigil", "design", "comptime"]
+---
+
+Zigil combines native struct reflection with external compile-time rule maps.
+You keep the native type as the source of truth; a rule map supplies constraints
+that the type alone cannot express. The compiler checks complete field coverage
+and exact field-rule type agreement. The generated validator uses ordinary native
+control flow, without an interpreted schema registry.
+
+This leaves types usable by other code and lets the same native struct have
+different constraints in different contexts. It also makes adding a field an
+explicit validation decision. The cost is some repeated field names and strict
+type matching. Mutable/sentinel slice ergonomics need consumer feedback.
+
+An embedded-declaration-only approach would modify consumer types and make foreign
+types awkward. A runtime builder would introduce schema lifetime and dispatch
+contracts before a consumer needs them. Neither is necessary for this foundation.
+
+## Design influences
+
+- [Zod](https://github.com/colinhacks/zod) informs discoverable constraints and
+  structured issue paths. JavaScript's dynamic value model is not reproduced.
+- [Valibot](https://github.com/fabian-hiller/valibot) informs small independent
+  rule units. A transformation pipeline is not required for validation-only use.
+- [ArkType](https://github.com/arktypeio/arktype) illustrates constraint analysis
+  ahead of validation. Zig's compiler provides specialization without adding a
+  string-based type language or a set-algebra engine.
+- [Ajv](https://github.com/ajv-validator/ajv) separates schema compilation from
+  repeated validation. Zigil uses compile-time definitions rather than runtime
+  JavaScript code generation or dynamic JSON Schema interpretation.
+- [Pydantic](https://github.com/pydantic/pydantic) highlights the need to make
+  strictness and coercion explicit. This API validates values without coercion.
+- [Serde](https://github.com/serde-rs/serde) makes borrowing versus ownership
+  central at decoding boundaries. It is a serialization framework, not a direct
+  substitute for value-constraint validation.
+- [Rust validator](https://github.com/Keats/validator) demonstrates field and nested
+  validation associated with native structs. Zig reflection replaces derive macros.
+
+Relevant Zig sources include
+[validate.zig](https://github.com/karlseguin/validate.zig),
+[Zigantic](https://github.com/muhammad-fiaz/zigantic),
+[pascalPost's JSON Schema validator](https://github.com/pascalPost/json-schema-validator),
+and [zig-validate](https://github.com/mov-rax/zig-validate). They address different
+layers: JSON-centered runtime validators, broader schemas, JSON Schema compliance,
+and generic interface checking respectively. Zigil adopts none as a dependency.
+
+Archived [Getty](https://github.com/getty-zig/getty),
+[Getty JSON](https://github.com/getty-zig/json) and
+[tres](https://github.com/ziglibs/tres) provide historical decoding and optional-value
+lessons. [megaNour/json-schema](https://github.com/megaNour/json-schema) is a scaffold
+at the reviewed revision and has no root licence file; it is not a code-reuse source.
+Archive status and reviewed commits were checked on 27 November 2026. Maintenance
+and compatibility must be rechecked before adopting any dependency.
+
+Greyfoundry's [Diszig](https://github.com/greyfoundry/diszig) and
+[Identifold](https://github.com/greyfoundry/identifold) inform explicit contracts,
+failure-path tests, consumer verification and contribution transparency.
+Compiler behavior follows the [official Zig toolchain](https://ziglang.org/download/)
+and its installed standard library. These are design references, not transferred
+implementation code or performance evidence.
+
+## Boundaries kept small
+
+Fail-fast issues borrow caller-provided path storage. Collecting multiple errors
+would need a separate capacity and lifetime contract; it can follow real usage.
+Parsing and transformations stay outside typed validation. Compile-time execution
+is available for known values, while external data must be checked at runtime.
+No speed or zero-overhead claim follows from using `comptime`.

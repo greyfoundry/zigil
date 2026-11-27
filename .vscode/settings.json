@@ -1,0 +1,4 @@
+{
+  "files.exclude": {"**/.zig-cache": true, "**/zig-out": true},
+  "search.exclude": {"**/.private/**": true, "**/.zig-cache/**": true, "**/zig-out/**": true}
+}
