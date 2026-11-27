@@ -22,6 +22,13 @@ def errors():
     else:
         print('No Git metadata; tracked-path check skipped.')
     config = json.loads((ROOT / 'docs/docs.json').read_text(encoding='utf-8'))
+    # Public code must stay identical to the source compiled by the build graph.
+    example = ROOT / 'examples/basic.zig'
+    if example.is_file():
+        readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+        snippet = re.search(r'```zig\n(.*?)```', readme, re.DOTALL)
+        if not snippet or snippet.group(1) != example.read_text(encoding='utf-8'):
+            problems.append('README Zig example differs from compiled examples/basic.zig')
     for group in config['navigation']['groups']:
         for page in group['pages']:
             if not isinstance(page, str) or not any((ROOT / 'docs' / (page+ext)).is_file() for ext in ('.mdx', '.md')):

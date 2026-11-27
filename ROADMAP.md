@@ -6,9 +6,9 @@ deployment require separate authorization. No dates or 1.0 readiness are promise
 
 | Phase | Target | State |
 | --- | --- | --- |
-| P0 | Toolchain/reference audit, compiler-tested API alternatives and decision | Toolchain/audit complete; comparison evidence being completed |
+| P0 | Toolchain/reference audit, compiler-tested API alternatives and decision | Three declaration probes compiled/executed; hybrid chosen, evidence in docs/design.mdx |
 | P1 | Native package, independent consumer, CI, policies and Mintlify sources | Working; full local Mintlify validation has an environment blocker |
-| P2 | Native constraints, bounded structured issues and explicit operational errors | Core implemented; resource and JSON Pointer contracts being refined |
+| P2 | Native constraints, bounded structured issues and explicit operational errors | Implemented with bounded traversal, operational errors and JSON Pointer rendering; review pending |
 | P3 | Strict JSON/config decoding, presence/null, fidelity, budgets and ownership | Planned |
 | P4 | Composition, tagged unions, tuples/maps, refinements, defaults and transforms | Planned |
 | P5 | Deterministic Draft 2020-12 export; explicit unsupported conversion | Planned |

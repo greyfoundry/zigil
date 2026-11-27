@@ -11,9 +11,9 @@ const UserRule = z.Struct(User, .{
 pub fn main() !void {
     var path: [4]z.Segment = undefined;
     const good: User = .{ .name = "Astoris", .age = 20, .nickname = null };
-    if (z.validate(UserRule, good, &path) != null) return error.UnexpectedIssue;
+    if ((try z.validate(UserRule, good, &path)) != null) return error.UnexpectedIssue;
     const bad: User = .{ .name = "", .age = 20, .nickname = null };
-    const issue = z.validate(UserRule, bad, &path) orelse return error.ExpectedIssue;
+    const issue = (try z.validate(UserRule, bad, &path)) orelse return error.ExpectedIssue;
     // Field names and indices are separate typed segments, never an ambiguous
     // dotted string. Inspect/copy the path before reusing its backing buffer.
     if (!std.mem.eql(u8, issue.path[0].field, "name")) return error.WrongPath;

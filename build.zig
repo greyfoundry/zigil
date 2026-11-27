@@ -28,6 +28,7 @@ pub fn build(b: *std.Build) void {
         .{ "nan_bound", "Zigil: numeric bounds must be finite" },
         .{ "unknown_enum", "Zigil: enum subset contains an undeclared tag" },
         .{ "integer_overflow", "cannot represent integer value '256'" },
+        .{ "wrong_custom", "Zigil: custom predicate must return bool or an error union of bool" },
     }) |fixture| {
         const negative = b.addObject(.{
             .name = fixture[0],

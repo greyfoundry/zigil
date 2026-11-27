@@ -7,7 +7,8 @@ keywords: ["Zig", "validation", "Zigil"]
 
 Zigil checks value constraints on native Zig values. You keep your structs and
 choose compile-time rules for their fields. Validation returns the first issue
-with field and index segments in caller-owned storage.
+with field and index segments in caller-owned storage. Resource exhaustion and
+custom callback failures use Zig errors, separate from invalid data.
 
 The foundation covers strings, integers, finite floats, booleans, enum subsets,
 optionals, structs, arrays, slices and custom predicates. Built-in rules allocate

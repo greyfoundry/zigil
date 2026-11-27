@@ -1,7 +1,7 @@
 # Documentation sources
 
-`docs.json` and the five navigated MDX pages form a standalone Mintlify source
-root. Colors/theme match Diszig's existing checked-in configuration. The library
+`docs.json` and the navigated MDX pages form a standalone Mintlify source
+root. The supplied bootstrap configuration defines the navigation and green theme. The library
 does not depend on Node or Mintlify.
 
 For local docs work, install the current `mint` CLI and run `mint validate` and

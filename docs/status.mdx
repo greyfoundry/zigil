@@ -10,14 +10,18 @@ releases and no hosted Zigil documentation deployment.
 | Area | Current state |
 | --- | --- |
 | Typed constraints | Strings/bytes, numbers, booleans, enums, optionals, structs, arrays/slices and custom predicates implemented |
-| Errors | Fail-fast typed field/index paths borrowing caller storage; resource/error contract being refined in P2 |
-| Verification | 17 runtime cases and 8 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
+| Errors | Fail-fast typed field/index paths borrowing caller storage; bounded traversal, operational errors and caller-buffer JSON Pointer rendering implemented |
+| Verification | 22 runtime cases and 9 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
 | Package | Allowlisted package builds/runs from an independent project |
 | Platforms | x86_64 Linux executed; aarch64 Linux, x86_64 Windows and aarch64 macOS cross-compiled |
 | Mintlify | Sources and internal link check available; local full validation blocked by an OS interface-query error |
 | Strict decoding | P3; not yet provided as a Zigil API |
 | Composition, transforms and unions | P4; planned |
 | JSON Schema export/evaluation and OpenAPI | P5-P7; planned, no conformance claimed |
+
+P0 compared three compiler-tested declaration alternatives sharing a validation
+kernel. The external native-type/rule-map hybrid was selected for type ownership
+and reuse, with no performance ranking claimed.
 
 The roadmap is phase-gated. This foundation does not meet the mature release
 criteria. CI configuration alone does not establish a completed CI result.

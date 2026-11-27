@@ -40,8 +40,8 @@ For a mutable local path dependency rather than a cached package, use Zig's
 `.path` dependency syntax in your consumer's `build.zig.zon`.
 
 The public import is `@import("zigil")`. Call
-`validate(Rule, value, path_buffer)`: `null` means success; an `Issue` describes
-the first failure. Inspect or copy the issue's path before reusing the buffer.
+`try validate(Rule, value, path_buffer)`: `null` means success; an `Issue` describes
+the first invalid-data failure. Zig errors mean the operation could not complete. Inspect or copy the issue's path before reusing the buffer.
 See [ownership](/errors-ownership) for those lifetimes and [rules](/validation-semantics) for constructors.
 
 There is no published release URL to install yet. Pin a reviewed commit for shared

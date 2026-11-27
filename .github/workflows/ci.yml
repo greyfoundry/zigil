@@ -35,23 +35,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install verified Zig archive (Linux)
-        if: runner.os == 'Linux'
+      - name: Install verified Zig archive (Linux or macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          archive=zig-x86_64-linux-0.17.1.tar.xz
+          case "$RUNNER_OS/$(uname -m)" in
+            Linux/x86_64)
+              distribution=zig-x86_64-linux-0.17.1
+              expected=3581863e3cbcfd0fce0efc682ce7e9e93da96668a977791d356a26d2a7e9b17a ;;
+            macOS/arm64)
+              distribution=zig-aarch64-macos-0.17.1
+              expected=75f1bc7a1e9852f17ec9a0c1895f767c4ec56d46bc8a834920eece1d0359dd8d ;;
+            macOS/x86_64)
+              distribution=zig-x86_64-macos-0.17.1
+              expected=9af07b20319fbd0c92ee46ad23e81d6a782b1aaea2cfb8dcbff35f1d2c7ddbb7 ;;
+            *) echo 'Unsupported runner architecture' >&2; exit 1 ;;
+          esac
+          archive="$distribution.tar.xz"
           cd "$RUNNER_TEMP"
           curl -fsSLo "$archive" "https://ziglang.org/download/0.17.1/$archive"
-          echo "3581863e3cbcfd0fce0efc682ce7e9e93da96668a977791d356a26d2a7e9b17a  $archive" | sha256sum -c -
+          actual="$(shasum -a 256 "$archive" | cut -d' ' -f1)"
+          test "$actual" = "$expected"
           tar -xJf "$archive"
-          echo "$RUNNER_TEMP/zig-x86_64-linux-0.17.1" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/$distribution" >> "$GITHUB_PATH"
 
       - name: Install verified Zig archive (Windows)
         if: runner.os == 'Windows'
@@ -84,3 +97,25 @@ jobs:
           for target in aarch64-linux-gnu x86_64-windows-gnu aarch64-macos; do
             zig build check -Dtarget="$target" -Doptimize=ReleaseSafe --summary all
           done
+
+  upcoming-compiler:
+    name: Advisory upcoming compiler
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Probe pinned development compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=0.18.0-dev.1311+3a0e028c5
+          archive="zig-x86_64-linux-$version.tar.xz"
+          cd "$RUNNER_TEMP"
+          curl -fsSLo "$archive" "https://ziglang.org/builds/$archive"
+          echo "86802acd1c2ae5d1c6ab4be84fb207bdeedb19c8d4493813e0d00a70a4613b12  $archive" | sha256sum -c -
+          tar -xJf "$archive"
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/zig-x86_64-linux-$version/zig" version
+          "$RUNNER_TEMP/zig-x86_64-linux-$version/zig" build check test --summary all

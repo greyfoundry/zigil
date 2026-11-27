@@ -8,9 +8,9 @@ const Rule = z.Struct(Config, .{
 
 pub fn main() !void {
     var path: [2]z.Segment = undefined;
-    if (z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path) != null)
+    if ((try z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path)) != null)
         return error.UnexpectedIssue;
-    const issue = z.validate(Rule, .{ .workers = 4, .names = &.{""} }, &path) orelse return error.ExpectedIssue;
+    const issue = (try z.validate(Rule, .{ .workers = 4, .names = &.{""} }, &path)) orelse return error.ExpectedIssue;
     if (issue.code != .too_short or issue.path.len != 2 or issue.path[1].index != 0)
         return error.WrongIssue;
 }

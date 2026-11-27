@@ -28,9 +28,9 @@ const UserRule = z.Struct(User, .{
 pub fn main() !void {
     var path: [4]z.Segment = undefined;
     const good: User = .{ .name = "Astoris", .age = 20, .nickname = null };
-    if (z.validate(UserRule, good, &path) != null) return error.UnexpectedIssue;
+    if ((try z.validate(UserRule, good, &path)) != null) return error.UnexpectedIssue;
     const bad: User = .{ .name = "", .age = 20, .nickname = null };
-    const issue = z.validate(UserRule, bad, &path) orelse return error.ExpectedIssue;
+    const issue = (try z.validate(UserRule, bad, &path)) orelse return error.ExpectedIssue;
     // Field names and indices are separate typed segments, never an ambiguous
     // dotted string. Inspect/copy the path before reusing its backing buffer.
     if (!std.mem.eql(u8, issue.path[0].field, "name")) return error.WrongPath;
@@ -64,13 +64,15 @@ For another build graph, add this checkout as a Zig package dependency named
 ## Contracts and scope
 
 - Zig owns native field types and integer widths. Zigil owns value constraints.
-- Validation is fail-fast and returns `?Issue`: null succeeds; an issue has a code,
+- Validation is fail-fast and returns `!?Issue`: null succeeds; an issue has a code,
   a path borrowing caller storage, and a static message without raw input values.
 - Struct rules must cover every native field with exactly matching types.
 - String length counts bytes; UTF-8 validation is on by default. Floats must be finite.
 - `Optional` uses `?T`. Missing versus explicitly null belongs to decoding.
-- Path exhaustion is an explicit `path_capacity` failure, including for valid input.
-- Custom predicates own their side effects and must not retain borrowed input.
+- Path exhaustion and resource limits return Zig errors, including for valid input.
+- `Issue.jsonPointer` renders RFC 6901 paths into caller-provided byte storage.
+- Custom predicates may return `bool` or an error union of `bool`; operational
+  errors propagate. They own their effects and must not retain borrowed input.
 
 Parsing/coercion, tagged-union schemas, accumulated errors, JSON Schema and OpenAPI
 generation are outside this foundation. Use standard-library decoding before

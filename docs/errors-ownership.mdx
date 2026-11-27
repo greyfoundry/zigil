@@ -24,8 +24,8 @@ Do not return an issue pointing to a function-local path array.
 
 No cleanup is required for built-in validation itself. The caller decides whether
 the path buffer lives on the stack or comes from an allocator. Zigil does not
-silently fall back to heap storage when it is full: `path_capacity` identifies
-the longest available prefix and instructs you to provide more storage.
+silently fall back to heap storage when it is full: `error.PathCapacityExceeded` requires the caller to provide
+more storage. No invalid-data issue is returned for that incomplete traversal.
 
 Path capacity counts struct-field and collection-index edges. Optional wrappers
 do not add a segment. A path requires storage even on successful traversal.
@@ -45,3 +45,10 @@ cycle-following pointer traversal or arbitrary recursive schema engine is provid
 Custom predicates are ordinary caller-provided functions. They must not retain
 borrowed input. Zigil cannot guarantee their allocation or execution behavior.
 The built-in allocation contract does not cover custom predicate side effects.
+
+
+A JSON Pointer rendered by `Issue.jsonPointer` borrows its separate output byte
+buffer. It can outlive the issue and path buffer if that output storage stays
+alive and unchanged. Rendering never allocates; insufficient output capacity is
+`error.NoSpaceLeft`. Error paths do not have a validity guarantee after an
+operational error, so inspect only an Issue returned by successful completion.
