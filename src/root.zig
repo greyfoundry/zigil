@@ -26,3 +26,13 @@ pub const Decoded = json.Decoded;
 pub const Presence = core.Presence;
 pub const Field = core.Field;
 pub const FieldOptions = core.FieldOptions;
+
+pub const Refine = core.Refine;
+pub const Default = core.Default;
+pub const Transform = core.Transform;
+pub const Tuple = core.Tuple;
+pub const Union = core.Union;
+pub const Map = core.Map;
+pub const Recursive = core.Recursive;
+pub const Format = core.Format;
+pub const Formatted = core.Formatted;

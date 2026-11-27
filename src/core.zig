@@ -24,6 +24,9 @@ pub const Code = enum {
     duplicate_field,
     invalid_number,
     null_not_allowed,
+    literal_mismatch,
+    invalid_format,
+    union_tag,
 };
 
 pub const Issue = struct {
@@ -81,7 +84,7 @@ pub const ResourceError = error{
 };
 
 // Internal traversal state. On failure the path is left intact for the caller.
-const Context = struct {
+pub const Context = struct {
     path: []Segment,
     depth: usize = 0,
     limits: Limits,
@@ -89,28 +92,28 @@ const Context = struct {
     bytes: usize = 0,
     items: usize = 0,
 
-    fn fail(self: *Context, code: Code, comptime message: []const u8) Issue {
+    pub fn fail(self: *Context, code: Code, comptime message: []const u8) Issue {
         return .{ .code = code, .path = self.path[0..self.depth], .message = message };
     }
 
-    fn push(self: *Context, segment: Segment) ResourceError!void {
+    pub fn push(self: *Context, segment: Segment) ResourceError!void {
         if (self.depth == self.limits.max_depth) return error.DepthLimitExceeded;
         if (self.depth == self.path.len) return error.PathCapacityExceeded;
         self.path[self.depth] = segment;
         self.depth += 1;
     }
 
-    fn consumeWork(self: *Context, amount: usize) ResourceError!void {
+    pub fn consumeWork(self: *Context, amount: usize) ResourceError!void {
         if (amount > self.limits.max_work - self.work) return error.WorkLimitExceeded;
         self.work += amount;
     }
 
-    fn consumeBytes(self: *Context, amount: usize) ResourceError!void {
+    pub fn consumeBytes(self: *Context, amount: usize) ResourceError!void {
         if (amount > self.limits.max_bytes - self.bytes) return error.InputLimitExceeded;
         self.bytes += amount;
     }
 
-    fn consumeItems(self: *Context, amount: usize) ResourceError!void {
+    pub fn consumeItems(self: *Context, amount: usize) ResourceError!void {
         if (amount > self.limits.max_items - self.items) return error.ItemLimitExceeded;
         self.items += amount;
     }
@@ -133,7 +136,7 @@ pub fn validateWithLimits(comptime Rule: type, value: Rule.Value, path_buffer: [
     return checkRule(Rule, value, &context);
 }
 
-fn checkRule(comptime Rule: type, value: Rule.Value, ctx: *Context) !?Issue {
+pub fn checkRule(comptime Rule: type, value: Rule.Value, ctx: *Context) !?Issue {
     try ctx.consumeWork(1);
     return Rule.check(value, ctx);
 }
@@ -157,6 +160,7 @@ fn lengthIssue(len: usize, comptime limits: Length, ctx: *Context) ?Issue {
 pub const StringOptions = struct {
     /// Length limits count bytes, including when utf8 is true.
     length: Length = .{},
+    unit: enum { bytes, code_points } = .bytes,
     /// Validate UTF-8 by default; disable for arbitrary byte strings.
     utf8: bool = true,
     prefix: ?[]const u8 = null,
@@ -165,16 +169,25 @@ pub const StringOptions = struct {
 
 pub fn String(comptime options: StringOptions) type {
     checkLength(options.length);
+    if (options.unit == .code_points and !options.utf8) @compileError("Zigil: code-point length requires UTF-8");
     return struct {
+        pub const kind = .string;
+        pub const config = options;
         pub const Value = []const u8;
         fn check(value: Value, ctx: *Context) !?Issue {
             try ctx.consumeBytes(value.len);
             // Reject oversized inputs before scanning their contents.
-            if (lengthIssue(value.len, options.length, ctx)) |issue| return issue;
+            if (options.unit == .bytes) {
+                if (lengthIssue(value.len, options.length, ctx)) |issue| return issue;
+            }
             if (options.utf8) {
                 try ctx.consumeWork(value.len);
                 if (!std.unicode.utf8ValidateSlice(value))
                     return ctx.fail(.invalid_utf8, "must contain valid UTF-8");
+            }
+            if (options.unit == .code_points) {
+                const count = std.unicode.utf8CountCodepoints(value) catch unreachable;
+                if (lengthIssue(count, options.length, ctx)) |issue| return issue;
             }
             if (options.prefix) |prefix| {
                 try ctx.consumeWork(@min(value.len, prefix.len));
@@ -225,6 +238,8 @@ pub fn Int(comptime T: type, comptime bounds: Bounds(T)) type {
     if (@typeInfo(T) != .int) @compileError("Zigil: Int requires an integer type");
     checkBounds(T, bounds);
     return struct {
+        pub const kind = .integer;
+        pub const config = bounds;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             return numberIssue(T, value, bounds, ctx);
@@ -237,6 +252,8 @@ pub fn Float(comptime T: type, comptime bounds: Bounds(T)) type {
     if (@typeInfo(T) != .float) @compileError("Zigil: Float requires a floating-point type");
     checkBounds(T, bounds);
     return struct {
+        pub const kind = .float;
+        pub const config = bounds;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             if (!std.math.isFinite(value)) return ctx.fail(.not_finite, "must be finite");
@@ -248,6 +265,8 @@ pub fn Float(comptime T: type, comptime bounds: Bounds(T)) type {
 /// null accepts either boolean; true or false requires that exact value.
 pub fn Boolean(comptime expected: ?bool) type {
     return struct {
+        pub const kind = .boolean;
+        pub const expected_value = expected;
         pub const Value = bool;
         fn check(value: bool, ctx: *Context) !?Issue {
             if (expected) |required| {
@@ -273,6 +292,8 @@ pub fn Enumeration(comptime T: type, comptime allowed: ?[]const T) type {
         }
     }
     return struct {
+        pub const kind = .enumeration;
+        pub const allowed_values = allowed orelse tags;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             for (allowed orelse tags) |candidate| {
@@ -288,6 +309,8 @@ pub fn Enumeration(comptime T: type, comptime allowed: ?[]const T) type {
 /// represent a missing wire-format field separately from explicit null.
 pub fn Optional(comptime Child: type) type {
     return struct {
+        pub const kind = .optional;
+        pub const ChildRule = Child;
         pub const Value = ?Child.Value;
         fn check(value: Value, ctx: *Context) !?Issue {
             if (value) |present| return checkRule(Child, present, ctx);
@@ -310,6 +333,8 @@ pub fn Struct(comptime T: type, comptime rules: anytype) type {
         if (Rule.Value != FieldType) @compileError("Zigil: rule type does not match field: " ++ name);
     }
     return struct {
+        pub const kind = .object;
+        pub const field_rules = rules;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             inline for (info.field_names) |name| {
@@ -325,6 +350,9 @@ pub fn Struct(comptime T: type, comptime rules: anytype) type {
 fn sequence(comptime T: type, comptime Child: type, comptime limits: Length) type {
     checkLength(limits);
     return struct {
+        pub const kind = .sequence;
+        pub const ChildRule = Child;
+        pub const config = limits;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             try ctx.consumeItems(value.len);
@@ -356,6 +384,7 @@ pub fn Custom(comptime T: type, comptime predicate: anytype, comptime message: [
     const Payload = if (@typeInfo(Return) == .error_union) @typeInfo(Return).error_union.payload else Return;
     if (Payload != bool) @compileError("Zigil: custom predicate must return bool or an error union of bool");
     return struct {
+        pub const kind = .custom;
         pub const Value = T;
         fn check(value: T, ctx: *Context) !?Issue {
             const result = predicate(value);
@@ -380,6 +409,7 @@ pub const FieldOptions = struct { optional: bool = false, nullable: bool = false
 
 pub fn Field(comptime Child: type, comptime options: FieldOptions) type {
     return struct {
+        pub const kind = .field;
         pub const Value = Presence(Child.Value);
         pub const ChildRule = Child;
         pub const config = options;
@@ -389,6 +419,157 @@ pub fn Field(comptime Child: type, comptime options: FieldOptions) type {
                 .null_value => if (options.nullable) null else ctx.fail(.null_not_allowed, "null is not permitted"),
                 .value => |present| checkRule(Child, present, ctx),
             };
+        }
+    };
+}
+
+/// Child constraints run before a cross-field or domain predicate.
+pub fn Refine(comptime Child: type, comptime predicate: anytype, comptime message: []const u8) type {
+    const Predicate = Custom(Child.Value, predicate, message);
+    return struct {
+        pub const kind = .refinement;
+        pub const ChildRule = Child;
+        pub const Value = Child.Value;
+        fn check(value: Value, ctx: *Context) !?Issue {
+            if (try checkRule(Child, value, ctx)) |issue| return issue;
+            return checkRule(Predicate, value, ctx);
+        }
+    };
+}
+
+/// Defaults are applied only by decoding an absent object field, never to null.
+/// The compile-time value has static lifetime; native validation does not mutate.
+pub fn Default(comptime Child: type, comptime fallback: Child.Value) type {
+    return struct {
+        pub const kind = .default;
+        pub const ChildRule = Child;
+        pub const default_value = fallback;
+        pub const Value = Child.Value;
+        fn check(value: Value, ctx: *Context) !?Issue {
+            return checkRule(Child, value, ctx);
+        }
+    };
+}
+
+/// Explicit decoding transform. Callback takes (arena allocator, Input.Value)
+/// and returns Output.Value or an error union. Output is validated afterwards.
+/// Callbacks must use that allocator and return only static or arena-owned data.
+pub fn Transform(comptime Input: type, comptime Output: type, comptime callback: anytype) type {
+    return struct {
+        pub const kind = .transform;
+        pub const InputRule = Input;
+        pub const OutputRule = Output;
+        pub const convert = callback;
+        pub const Value = Output.Value;
+        fn check(value: Value, ctx: *Context) !?Issue {
+            return checkRule(Output, value, ctx);
+        }
+    };
+}
+
+/// Heterogeneous native tuple, encoded as a fixed-length JSON array.
+pub fn Tuple(comptime rules: anytype) type {
+    const count = rules.len;
+    var types: [count]type = undefined;
+    for (rules, 0..) |Rule, index| types[index] = Rule.Value;
+    const T = @Tuple(&types);
+    return struct {
+        pub const kind = .tuple;
+        pub const element_rules = rules;
+        pub const Value = T;
+        fn check(value: T, ctx: *Context) !?Issue {
+            try ctx.consumeItems(count);
+            inline for (rules, 0..) |Rule, index| {
+                try ctx.push(.{ .index = index });
+                if (try checkRule(Rule, value[index], ctx)) |issue| return issue;
+                ctx.depth -= 1;
+            }
+            return null;
+        }
+    };
+}
+
+/// Native tagged union. JSON representation is {"tag":"name","value":payload}.
+pub fn Union(comptime T: type, comptime rules: anytype) type {
+    if (@typeInfo(T) != .@"union" or @typeInfo(T).@"union".tag_type == null)
+        @compileError("Zigil: Union requires a tagged union");
+    const info = @typeInfo(T).@"union";
+    for (info.field_names, info.field_types) |name, FieldType| {
+        if (!@hasField(@TypeOf(rules), name)) @compileError("Zigil: missing union variant rule: " ++ name);
+        if (@field(rules, name).Value != FieldType) @compileError("Zigil: union variant type mismatch: " ++ name);
+    }
+    for (@typeInfo(@TypeOf(rules)).@"struct".field_names) |name| {
+        if (!@hasField(T, name)) @compileError("Zigil: unknown union variant rule: " ++ name);
+    }
+    return struct {
+        pub const kind = .tagged_union;
+        pub const variant_rules = rules;
+        pub const Value = T;
+        fn check(value: T, ctx: *Context) !?Issue {
+            switch (value) {
+                inline else => |payload, tag| {
+                    try ctx.push(.{ .field = "value" });
+                    if (try checkRule(@field(rules, @tagName(tag)), payload, ctx)) |issue| return issue;
+                    ctx.depth -= 1;
+                },
+            }
+            return null;
+        }
+    };
+}
+
+/// Ordered native string map; keys and values are both validated. Validation
+/// borrows the map. Decoded maps and their keys belong to the owning result.
+pub fn Map(comptime Key: type, comptime Child: type, comptime limits: Length) type {
+    if (Key.Value != []const u8) @compileError("Zigil: Map requires a string key rule");
+    checkLength(limits);
+    return struct {
+        pub const kind = .map;
+        pub const KeyRule = Key;
+        pub const ChildRule = Child;
+        pub const config = limits;
+        pub const Value = std.array_hash_map.String(Child.Value);
+        fn check(value: Value, ctx: *Context) !?Issue {
+            try ctx.consumeItems(value.count());
+            if (lengthIssue(value.count(), limits, ctx)) |issue| return issue;
+            for (value.keys(), value.values()) |key, child| {
+                try ctx.push(.{ .field = key });
+                if (try checkRule(Key, key, ctx)) |issue| return issue;
+                if (try checkRule(Child, child, ctx)) |issue| return issue;
+                ctx.depth -= 1;
+            }
+            return null;
+        }
+    };
+}
+
+/// Late compile-time provider breaks recursive type expansion. Depth and work
+/// limits apply to each recursive visit; no memoization or hidden allocation.
+pub fn Recursive(comptime T: type, comptime provider: fn () type) type {
+    return struct {
+        pub const kind = .recursive;
+        pub const resolve = provider;
+        pub const Value = T;
+        fn check(value: T, ctx: *Context) anyerror!?Issue {
+            const Rule = provider();
+            if (Rule.Value != T) @compileError("Zigil: recursive provider has the wrong value type");
+            return checkRule(Rule, value, ctx);
+        }
+    };
+}
+
+pub const Format = @import("formats.zig").Format;
+/// A named syntax check on a UTF-8 string. No I/O or normalization.
+pub fn Formatted(comptime format: Format) type {
+    return struct {
+        pub const kind = .format;
+        pub const format_name = format;
+        pub const Value = []const u8;
+        fn check(value: Value, ctx: *Context) !?Issue {
+            if (try checkRule(String(.{}), value, ctx)) |issue| return issue;
+            try ctx.consumeWork(value.len);
+            if (!@import("formats.zig").valid(format, value)) return ctx.fail(.invalid_format, "must match the configured format syntax");
+            return null;
         }
     };
 }

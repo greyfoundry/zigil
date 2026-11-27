@@ -200,7 +200,7 @@ pub fn decode(comptime Rule: type, allocator: Allocator, input: []const u8, opti
         .value => |value| {
             const path = state.allocator().alloc(core.Segment, options.max_depth) catch return state.allocationFailure();
             var ctx: DecodeContext = .{ .state = state, .path = path, .max_work = options.validation.max_work, .options = options };
-            const typed = fromValue(Rule.Value, value, &ctx) catch |err| switch (err) {
+            const typed = fromRule(Rule, value, &ctx) catch |err| switch (err) {
                 error.Reported => return .{ .state = state, .outcome = .{ .invalid = ctx.issue.? } },
                 error.OutOfMemory => return state.allocationFailure(),
                 else => return err,
@@ -209,6 +209,129 @@ pub fn decode(comptime Rule: type, allocator: Allocator, input: []const u8, opti
                 return .{ .state = state, .outcome = .{ .invalid = issue } };
             return .{ .state = state, .outcome = .{ .valid = typed } };
         },
+    }
+}
+
+// Rule-directed decoding preserves explicit defaults, transformations and
+// composition. Native reflection remains the fallback for custom leaf types.
+fn fromRule(comptime Rule: type, value: Value, ctx: *DecodeContext) anyerror!Rule.Value {
+    if (!@hasDecl(Rule, "kind")) return fromValue(Rule.Value, value, ctx);
+    const T = Rule.Value;
+    switch (Rule.kind) {
+        .refinement, .default => return fromRule(Rule.ChildRule, value, ctx),
+        .recursive => {
+            try ctx.charge(1);
+            return fromRule(Rule.resolve(), value, ctx);
+        },
+        .transform => {
+            const input = try fromRule(Rule.InputRule, value, ctx);
+            // Validate before invoking user code; its operational errors remain
+            // errors, not invalid input. Arena allocation failures are translated.
+            var validation_context: core.Context = .{ .path = ctx.path, .depth = ctx.depth, .limits = ctx.options.validation, .work = ctx.work };
+            const finding = try core.checkRule(Rule.InputRule, input, &validation_context);
+            ctx.work = validation_context.work;
+            if (finding) |issue| {
+                ctx.issue = issue;
+                return error.Reported;
+            }
+            const converted = Rule.convert(ctx.state.allocator(), input);
+            return if (@typeInfo(@TypeOf(converted)) == .error_union) try converted else converted;
+        },
+        .optional => return if (value == .null) null else try fromRule(Rule.ChildRule, value, ctx),
+        .field => return if (value == .null) .null_value else .{ .value = try fromRule(Rule.ChildRule, value, ctx) },
+        .sequence => {
+            if (value != .array) return ctx.fail(.type_mismatch, "expected a JSON array");
+            const info = @typeInfo(T);
+            if (info == .array and value.array.items.len != info.array.len) return ctx.fail(.type_mismatch, "array length must match the native array");
+            var result: if (info == .array) T else []Rule.ChildRule.Value = if (info == .array) undefined else try ctx.state.allocator().alloc(Rule.ChildRule.Value, value.array.items.len);
+            for (value.array.items, 0..) |item, index| {
+                try ctx.charge(1);
+                try ctx.push(.{ .index = index });
+                result[index] = try fromRule(Rule.ChildRule, item, ctx);
+                ctx.depth -= 1;
+            }
+            return result;
+        },
+        .tuple => {
+            if (value != .array or value.array.items.len != Rule.element_rules.len) return ctx.fail(.type_mismatch, "expected a fixed-length JSON tuple");
+            var result: T = undefined;
+            inline for (Rule.element_rules, 0..) |Child, index| {
+                try ctx.charge(1);
+                try ctx.push(.{ .index = index });
+                result[index] = try fromRule(Child, value.array.items[index], ctx);
+                ctx.depth -= 1;
+            }
+            return result;
+        },
+        .object => {
+            if (value != .object) return ctx.fail(.type_mismatch, "expected a JSON object");
+            const info = @typeInfo(T).@"struct";
+            for (value.object.keys()) |key| {
+                var known = false;
+                inline for (info.field_names) |name| if (!known) {
+                    try ctx.charge(1);
+                    try ctx.charge(@min(name.len, key.len));
+                    known = std.mem.eql(u8, key, name);
+                };
+                if (!known) {
+                    try ctx.push(.{ .field = key });
+                    return ctx.fail(.unknown_field, "unknown JSON object member");
+                }
+            }
+            var result: T = undefined;
+            inline for (info.field_names, info.field_types) |name, FieldType| {
+                const Child = @field(Rule.field_rules, name);
+                try ctx.charge(1);
+                try ctx.push(.{ .field = name });
+                @field(result, name) = if (value.object.get(name)) |item| try fromRule(Child, item, ctx) else missing: {
+                    if (@hasDecl(Child, "default_value")) break :missing Child.default_value;
+                    if (@typeInfo(FieldType) == .@"union" and @hasDecl(FieldType, "zigil_presence")) break :missing .missing;
+                    return ctx.fail(.missing_field, "required JSON object member is missing");
+                };
+                ctx.depth -= 1;
+            }
+            return result;
+        },
+        .tagged_union => {
+            if (value != .object) return ctx.fail(.type_mismatch, "expected a tagged JSON object");
+            for (value.object.keys()) |key| {
+                try ctx.charge(1);
+                try ctx.charge(key.len);
+                if (!std.mem.eql(u8, key, "tag") and !std.mem.eql(u8, key, "value")) {
+                    try ctx.push(.{ .field = key });
+                    return ctx.fail(.unknown_field, "unknown tagged union member");
+                }
+            }
+            try ctx.push(.{ .field = "tag" });
+            const tag = value.object.get("tag") orelse return ctx.fail(.missing_field, "union tag is missing");
+            if (tag != .string) return ctx.fail(.union_tag, "union tag must be a string");
+            inline for (@typeInfo(T).@"union".field_names) |name| {
+                try ctx.charge(1);
+                try ctx.charge(@min(name.len, tag.string.len));
+                if (std.mem.eql(u8, name, tag.string)) {
+                    ctx.depth -= 1;
+                    try ctx.push(.{ .field = "value" });
+                    const payload = value.object.get("value") orelse return ctx.fail(.missing_field, "union value is missing");
+                    const result = @unionInit(T, name, try fromRule(@field(Rule.variant_rules, name), payload, ctx));
+                    ctx.depth -= 1;
+                    return result;
+                }
+            }
+            return ctx.fail(.union_tag, "unknown union tag");
+        },
+        .map => {
+            if (value != .object) return ctx.fail(.type_mismatch, "expected a JSON map object");
+            var result: T = .empty;
+            for (value.object.keys(), value.object.values()) |key, item| {
+                try ctx.charge(1);
+                try ctx.charge(key.len);
+                try ctx.push(.{ .field = key });
+                try result.put(ctx.state.allocator(), key, try fromRule(Rule.ChildRule, item, ctx));
+                ctx.depth -= 1;
+            }
+            return result;
+        },
+        else => return fromValue(T, value, ctx),
     }
 }
 

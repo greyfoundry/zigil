@@ -280,3 +280,7 @@ test "issues do not borrow decoded input after parser cleanup" {
 test {
     _ = @import("json.zig");
 }
+
+test {
+    _ = @import("composition.zig");
+}

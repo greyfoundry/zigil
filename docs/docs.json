@@ -23,6 +23,7 @@
         "pages": [
           "validation-semantics",
           "decoding",
+          "composition",
           "errors-ownership",
           "json-schema",
           "compatibility",

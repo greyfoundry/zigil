@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added native tuple/map/tagged-union composition, refinements, defaults, explicit decoding transforms, bounded recursive rules, code-point lengths and local syntax formats.
+
 - Add the experimental native validation package, compile-time schema checks,
   examples, independent package-consumer checks, CI and Mintlify sources.
 - Add per-call resource limits, operational errors, fallible custom predicates
