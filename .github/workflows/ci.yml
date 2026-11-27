@@ -89,6 +89,15 @@ jobs:
           zig build test -Doptimize=ReleaseSafe --summary all
           bash tools/check-consumer.sh -Doptimize=ReleaseSafe --summary all
 
+      - name: Independent schema export oracle
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/schema-oracle"
+          "$RUNNER_TEMP/schema-oracle/bin/pip" install 'jsonschema==4.26.0'
+          "$RUNNER_TEMP/schema-oracle/bin/python" tools/check-schema-export.py
+
       - name: Compile representative cross targets
         if: runner.os == 'Linux'
         shell: bash

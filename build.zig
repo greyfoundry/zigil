@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) void {
     check.dependOn(&tests.step);
     const examples = b.step("examples", "Compile all public examples");
     const run_examples = b.step("run-examples", "Run all public examples");
-    inline for (.{ "basic", "json" }) |name| {
+    inline for (.{ "basic", "json", "schema" }) |name| {
         const exe = b.addExecutable(.{
             .name = name,
             .root_module = b.createModule(.{
@@ -60,6 +60,16 @@ pub fn build(b: *std.Build) void {
         run_examples.dependOn(&b.addRunArtifact(exe).step);
     }
     check.dependOn(examples);
+    const oracle = b.addExecutable(.{
+        .name = "schema-oracle",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/export_cases.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "zigil", .module = zigil }},
+        }),
+    });
+    b.step("schema-oracle", "Emit independent schema export fixtures").dependOn(&b.addRunArtifact(oracle).step);
     const api_docs = b.addObject(.{ .name = "zigil-docs", .root_module = zigil });
     const install_docs = b.addInstallDirectory(.{
         .source_dir = api_docs.getEmittedDocs(),

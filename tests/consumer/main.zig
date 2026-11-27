@@ -11,6 +11,12 @@ pub fn main() !void {
     var decoded = try z.decodeJson(Rule, std.heap.page_allocator, "{\"workers\":4,\"names\":[\"consumer\"]}", .{});
     defer decoded.deinit();
     if (decoded.outcome != .valid) return error.InvalidDecodedValue;
+    var pair = try z.decodeJson(z.Tuple(.{ z.String(.{}), z.Boolean(true) }), std.heap.page_allocator, "[\"consumer\",true]", .{});
+    defer pair.deinit();
+    if (pair.outcome != .valid) return error.InvalidTuple;
+    var schema = try z.exportSchema(z.Int(u128, .{}), std.heap.page_allocator, .{});
+    defer schema.deinit();
+    if (schema.json.len == 0) return error.EmptySchema;
     var path: [2]z.Segment = undefined;
     if ((try z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path)) != null)
         return error.UnexpectedIssue;

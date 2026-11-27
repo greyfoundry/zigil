@@ -11,7 +11,7 @@ deployment require separate authorization. No dates or 1.0 readiness are promise
 | P2 | Native constraints, bounded structured issues and explicit operational errors | Implemented with bounded traversal, operational errors and JSON Pointer rendering; review pending |
 | P3 | Strict JSON decoding, presence/null, fidelity, budgets and ownership | Implemented; native tests and consumer verification |
 | P4 | Composition, tagged unions, tuples/maps, refinements, defaults and transforms | Implemented; bounded recursion and local syntax formats tested |
-| P5 | Deterministic Draft 2020-12 export; explicit unsupported conversion | Planned |
+| P5 | Deterministic Draft 2020-12 export; explicit unsupported conversion | Implemented for declared representable rules; independent comparisons pass |
 | P6 | Optional external-schema evaluator, offline registries and pinned conformance | Planned |
 | P7 | OpenAPI 3.1/3.2 fragments, fuzzing, benchmarks and platform hardening | Planned |
 | P8 | Stable contracts, release candidate, support policy and Zig 1.0 migration | Planned |

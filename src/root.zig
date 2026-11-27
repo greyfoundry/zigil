@@ -36,3 +36,5 @@ pub const Map = core.Map;
 pub const Recursive = core.Recursive;
 pub const Format = core.Format;
 pub const Formatted = core.Formatted;
+pub const schema = @import("schema.zig");
+pub const exportSchema = schema.exportSchema;

@@ -284,3 +284,7 @@ test {
 test {
     _ = @import("composition.zig");
 }
+
+test {
+    _ = @import("schema.zig");
+}

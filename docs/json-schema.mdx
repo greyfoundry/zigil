@@ -1,8 +1,44 @@
 ---
-title: "JSON Schema and OpenAPI"
-description: "Planned standards interoperability."
+title: "JSON Schema export"
+description: "Deterministic Draft 2020-12 export with explicit conversion limits."
 ---
 
-Draft 2020-12 is the target dialect. Export and runtime validation of external schemas are separate capabilities. Input and output schemas may differ after transformations. A constraint that cannot be represented must not disappear silently.
+`exportSchema(Rule, allocator, options)` returns an owning document with a `json`
+byte slice and `deinit()`. The bytes are deterministic for the same rule, options
+and compiler. Always deinit the handle, including when passing its bytes to another
+library. The exporter is offline and does not run transform callbacks.
 
-OpenAPI 3.1 and 3.2 Schema Objects have dialect-specific semantics. Full OpenAPI document validation is outside the initial scope. No standards conformance is claimed yet. Remote references will not be fetched implicitly.
+The emitted dialect is `https://json-schema.org/draft/2020-12/schema`. It supports
+native integer ranges (including u128), booleans and constants, enum tag names,
+Unicode code-point string lengths, nullable values, field presence, strict objects,
+arrays/slices, tuples, string maps, tagged unions and recursive `$defs`/`$ref`.
+Object properties and definitions follow deterministic declaration/traversal order.
+
+Choose `direction = .input` (default) or `.output`. Scalar default fields may be
+absent in input; their `default` annotation does **not** make a third-party validator
+insert values. Those fields are required in output. Optional presence fields may
+remain absent in either direction. Output describes the canonical wire shape of
+validated values, with missing fields omitted, null preserved and unions using
+`tag`/`value`; it does not imply Zig's generic serializer uses that shape.
+
+Conversion fails with `UnsupportedConversion` for arbitrary custom/refinement
+callbacks and transforms, native finite/binary float fidelity, byte strings,
+nontrivial byte lengths, prefix/suffix constraints, local syntax formats, complex
+defaults and ambiguous nullable-child presence rules. These checks are not silently
+dropped or replaced with unenforced annotations. Use code-point lengths when the
+intended constraint is JSON Schema `minLength`/`maxLength`. An invalid configured
+default fails with `InvalidDefault`.
+
+`max_depth`, `max_nodes`, `max_output_bytes` and `max_allocated_bytes` bound export.
+Allocation limits count cumulative arena requests. Output length is checked before
+return; the allocation budget also bounds temporary serialized output. Budget
+failures and allocator errors are distinct from unsupported conversion.
+
+`zig build run-examples` compiles/runs `examples/schema.zig`. Development tooling
+`tools/check-schema-export.py` cross-checks exported schemas and the native decoder
+using independently maintained `jsonschema==4.26.0`. This comparator is not a
+runtime dependency. It currently exercises 34 valid/invalid instances, including
+Unicode, u128 overflow, missing/default/null, recursive references and unions.
+
+External schemas require a separate runtime evaluator (P6). Export support does
+not establish evaluator conformance. No full standards or OpenAPI claim is made.

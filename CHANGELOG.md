@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added deterministic Draft 2020-12 input/output schema export, recursive definitions, explicit unsupported-conversion errors and independent oracle checks.
+
 - Added native tuple/map/tagged-union composition, refinements, defaults, explicit decoding transforms, bounded recursive rules, code-point lengths and local syntax formats.
 
 - Add the experimental native validation package, compile-time schema checks,
