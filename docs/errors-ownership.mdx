@@ -52,3 +52,8 @@ buffer. It can outlive the issue and path buffer if that output storage stays
 alive and unchanged. Rendering never allocates; insufficient output capacity is
 `error.NoSpaceLeft`. Error paths do not have a validity guarantee after an
 operational error, so inspect only an Issue returned by successful completion.
+
+Native map findings also borrow key bytes from the map value. Copying only the
+Segment array does not own those bytes. Keep the map's keys alive or deep-copy
+them; rendering JSON Pointer into your own byte buffer produces an independent
+text copy. Owning decoder/runtime findings retain their own key storage.

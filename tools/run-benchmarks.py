@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cold native benchmark build and reproducible, explicitly scoped baseline."""
 import json
+import hashlib
 import os
 import platform
 import statistics
@@ -44,7 +45,12 @@ sys.exit(r.returncode)
     cpu=platform.processor()
     if Path('/proc/cpuinfo').exists():
         cpu=next((line.split(':',1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')),cpu)
+    source_files=sorted([root/'build.zig',root/'build.zig.zon',root/'bench/main.zig',*list((root/'src').glob('*.zig'))])
+    digest=hashlib.sha256()
+    for source in source_files:
+        digest.update(str(source.relative_to(root)).encode()+b'\0'+source.read_bytes()+b'\0')
     report={
+        'source':{'git_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),'worktree_dirty':bool(subprocess.check_output(['git','status','--porcelain'],cwd=root,text=True).strip()),'source_files_sha256':digest.hexdigest(),'source_files':[str(p.relative_to(root)) for p in source_files],'file_sha256':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files},'hash_method':'sorted relative path + NUL + bytes + NUL; authoritative source snapshot when worktree is dirty'},
         'scope':'128 bounded native struct fixtures; identical first issue code/field and constraints. Fail-fast; five invalid fixture categories and one valid. Not a library-wide comparison.',
         'environment':{'os':platform.system(),'architecture':platform.machine(),'cpu':cpu,'compiler':subprocess.check_output([zig,'version'],text=True).strip(),'mode':'ReleaseSafe','shared_host':True},
         'method':{'warmup_iterations_per_implementation':5000,'sample_order':'direct then zigil, repeated; potential order bias','clock':'monotonic awake','fresh_local_and_global_build_cache':True,'build_wall_seconds':build_seconds,'binary_bytes':executable.stat().st_size,'runtime_peak_rss_kib':int(rss_file.read_text().strip()) if rss_file.exists() else None},

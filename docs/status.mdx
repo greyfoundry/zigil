@@ -4,14 +4,14 @@ description: "Implemented capabilities, verification and remaining phase gates."
 keywords: ["Zigil", "status", "roadmap"]
 ---
 
-The experimental native package is implemented and under review. There are no
+The unreleased 1.0.0-rc.1 candidate is implemented and under review. There are no
 releases and no hosted Zigil documentation deployment.
 
 | Area | Current state |
 | --- | --- |
 | Typed constraints | Strings/bytes, numbers, booleans, enums, optionals, structs, arrays/slices and custom predicates implemented |
 | Errors | Fail-fast typed field/index paths borrowing caller storage; bounded traversal, operational errors and caller-buffer JSON Pointer rendering implemented |
-| Verification | 79 runtime cases and 9 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
+| Verification | 84 runtime cases and 9 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
 | Package | Allowlisted package builds/runs from an independent project |
 | Platforms | x86_64 Linux executed; aarch64 Linux, x86_64 Windows and aarch64 macOS cross-compiled |
 | Mintlify | Sources and internal link check available; local full validation blocked by an OS interface-query error |
@@ -26,5 +26,4 @@ P0 compared three compiler-tested declaration alternatives sharing a validation
 kernel. The external native-type/rule-map hybrid was selected for type ownership
 and reuse, with no performance ranking claimed.
 
-The roadmap is phase-gated. This foundation does not meet the mature release
-criteria. CI configuration alone does not establish a completed CI result.
+The roadmap is phase-gated. This candidate still needs the human gates in [readiness](/readiness). CI configuration alone does not establish a completed CI result.

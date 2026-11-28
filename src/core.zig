@@ -2,11 +2,11 @@
 //! Issue paths borrow the buffer supplied to validate; see docs/errors-ownership.mdx.
 const std = @import("std");
 
-/// A field name (static schema storage) or a zero-based collection index.
+/// A field name (schema storage or borrowed map key) or a zero-based index.
 pub const Segment = union(enum) { field: []const u8, index: usize };
 
 /// Machine-readable invalid-data codes. Operational failures use Zig errors.
-pub const Code = enum {
+pub const Code = enum(u16) {
     too_short,
     too_long,
     invalid_utf8,
@@ -24,10 +24,10 @@ pub const Code = enum {
     duplicate_field,
     invalid_number,
     null_not_allowed,
-    literal_mismatch,
     invalid_format,
     union_tag,
     schema_validation,
+    _,
 };
 
 pub const Issue = struct {
@@ -39,10 +39,11 @@ pub const Issue = struct {
 
     /// RFC 6901 JSON Pointer, borrowed from output. Root is the empty string.
     /// No allocation; a short buffer returns NoSpaceLeft, never a partial result.
-    pub fn jsonPointer(self: Issue, output: []u8) error{NoSpaceLeft}![]const u8 {
+    pub fn jsonPointer(self: Issue, output: []u8) error{ NoSpaceLeft, InvalidUtf8 }![]const u8 {
         var offset: usize = 0;
         for (self.path) |segment| switch (segment) {
             .field => |field| {
+                if (!std.unicode.utf8ValidateSlice(field)) return error.InvalidUtf8;
                 try appendByte(output, &offset, '/');
                 for (field) |byte| switch (byte) {
                     '~', '/' => {
@@ -122,8 +123,8 @@ pub const Context = struct {
 
 /// On completed validation, returns null for valid data or the first issue.
 /// Resource and callback errors propagate separately from invalid input.
-/// Borrows value only during this call. An issue's path borrows path_buffer;
-/// keep it alive and unchanged.
+/// An issue path borrows path_buffer and may borrow map keys from value; keep
+/// both key storage and the path buffer alive and unchanged while reading it.
 /// Built-in rules allocate nothing. Custom predicates own their own side effects.
 pub fn validate(comptime Rule: type, value: Rule.Value, path_buffer: []Segment) !?Issue {
     return validateWithLimits(Rule, value, path_buffer, .{});
@@ -187,6 +188,7 @@ pub fn String(comptime options: StringOptions) type {
                     return ctx.fail(.invalid_utf8, "must contain valid UTF-8");
             }
             if (options.unit == .code_points) {
+                try ctx.consumeWork(value.len);
                 const count = std.unicode.utf8CountCodepoints(value) catch unreachable;
                 if (lengthIssue(count, options.length, ctx)) |issue| return issue;
             }

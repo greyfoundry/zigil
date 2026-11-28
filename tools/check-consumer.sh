@@ -15,6 +15,11 @@ package_hash="$(ZIG_GLOBAL_CACHE_DIR="$temporary/cache" "$zig_bin" fetch "$root"
 tar -xzf "$temporary/cache/p/$package_hash.tar.gz" --strip-components=1 -C "$temporary/package"
 test ! -e "$temporary/package/.private"
 test ! -e "$temporary/package/.git"
+# The distribution itself must build with Zig only, without checkout tests.
+(
+  cd -- "$temporary/package"
+  ZIG_GLOBAL_CACHE_DIR="$temporary/cache" "$zig_bin" build "$@"
+)
 cp -- "$root/tests/consumer/"* "$temporary/consumer/"
 cd -- "$temporary/consumer"
 ZIG_GLOBAL_CACHE_DIR="$temporary/cache" "$zig_bin" build "$@"

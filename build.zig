@@ -112,5 +112,7 @@ pub fn build(b: *std.Build) void {
         .install_subdir = "docs",
     });
     b.step("docs", "Generate native API documentation").dependOn(&install_docs.step);
-    b.default_step.dependOn(check);
+    // The fetched source artifact excludes development tests/fixtures. Its
+    // default build still compiles every distributed public example.
+    b.default_step.dependOn(examples);
 }

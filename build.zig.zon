@@ -1,6 +1,6 @@
 .{
     .name = .zigil,
-    .version = "0.0.0",
+    .version = "1.0.0-rc.1",
     .fingerprint = 0x8ecd97c2936384c4,
     .minimum_zig_version = "0.17.1",
     .dependencies = .{
@@ -10,5 +10,5 @@
             .lazy = true,
         },
     },
-    .paths = .{ "build.zig", "build.zig.zon", "src", "examples", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.txt", "DEPENDENCIES.md", "README.md" },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "examples", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.txt", "DEPENDENCIES.md", "README.md", "API_CONTRACT.md", "COMPATIBILITY.md", "CHANGELOG.md", "MIGRATION.md", "SECURITY.md", "AI_DISCLOSURE.md", "RELEASING.md", "MATURITY.md" },
 }

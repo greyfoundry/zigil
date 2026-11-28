@@ -89,3 +89,13 @@ fn exercise(allocator: std.mem.Allocator) !void {
 test "export frees all partially built schemas at every allocation failure" {
     try t.checkAllAllocationFailures(a, exercise, .{});
 }
+
+test "presence wrappers outside a direct field or wrapping nullable native values never lose wire constraints" {
+    const Present = z.Field(z.Boolean(null), .{ .optional = true, .nullable = true });
+    const Nested = struct { flag: z.Presence(Present.Value) };
+    inline for (.{
+        Present,
+        z.Optional(Present),
+        z.Struct(Nested, .{ .flag = z.Field(z.Field(z.Boolean(null), .{ .nullable = true }), .{}) }),
+    }) |UnsupportedRule| try t.expectError(error.UnsupportedConversion, z.exportSchema(UnsupportedRule, a, .{}));
+}

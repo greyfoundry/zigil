@@ -1,0 +1,30 @@
+---
+title: "Candidate readiness"
+description: "Implemented features, evidence and the human gates before a mature release."
+---
+
+The repository contains an **unreleased 1.0.0-rc.1 review candidate**. Native typed
+validation, strict owning JSON, composition, declared-profile Draft 2020-12 export/
+evaluation and OpenAPI Schema Object fragments are implemented. There is no
+published 1.0 release or hosted documentation deployment.
+
+Automated evidence includes native failure/boundary/ownership checks, allocation
+failure injection, 1,319 mandatory and 138 optional official schema cases, 34
+independent export comparisons, a 176,800-case deterministic mutation campaign,
+a fetched independent consumer and actual scoped benchmark samples. Required
+stable CI passed the P6 checkpoint on Linux, Windows and macOS. Check the exact
+final candidate's CI; previous results do not prove later changes.
+
+Human code/API review, independent security/dependency review, a verified private
+vulnerability reporting route (GitHub reporting and secret scanning were observed
+disabled on 28 November 2026), accountable maintenance/support policy and review
+of repository protection/docs integration remain open. No agent or automated
+check can claim those approvals. The repository's MATURITY.md records gate state;
+API_CONTRACT.md and MIGRATION.md define the proposed contract. RELEASING.md and
+`tools/prepare-candidate.py` prepare local audited artifacts without publishing.
+
+Read the [conformance profile](/conformance) before adoption. Scope includes an
+explicit optional regex subset, format/content annotations and fail-fast errors.
+Unrepresentable export, unsupported required semantics and exhausted resources
+remain errors. No silent success, unverified performance promise or future Zig
+source-compatibility guarantee is part of the candidate.

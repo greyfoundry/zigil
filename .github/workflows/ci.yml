@@ -114,6 +114,7 @@ jobs:
           "$RUNNER_TEMP/schema-oracle/bin/pip" install -r tools/oracle-requirements.txt
           "$RUNNER_TEMP/schema-oracle/bin/python" tools/check-schema-export.py
           zig build bench -Doptimize=ReleaseSafe --summary all
+          python3 tools/prepare-candidate.py
 
       - name: Compile representative cross targets
         if: runner.os == 'Linux'

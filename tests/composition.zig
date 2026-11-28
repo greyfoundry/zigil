@@ -147,3 +147,36 @@ test "named formats check local syntax without network or normalization" {
         try t.expectEqual(z.Code.invalid_format, (try z.validate(z.Formatted(case[0]), case[2], &path)).?.code);
     }
 }
+
+test "code-point scans consume a separate bounded pass" {
+    const Rule = z.String(.{ .unit = .code_points });
+    var path: [1]z.Segment = undefined;
+    try t.expectError(error.WorkLimitExceeded, z.validateWithLimits(Rule, "a", &path, .{ .max_work = 2 }));
+    try t.expectEqual(@as(?z.Issue, null), try z.validateWithLimits(Rule, "a", &path, .{ .max_work = 3 }));
+}
+test "rendering a native borrowed map path creates an independent text copy" {
+    var map: Labels.Value = .empty;
+    defer map.deinit(a);
+    const key = try a.dupe(u8, "a/~");
+    var released = false;
+    defer if (!released) a.free(key);
+    try map.put(a, key, 0);
+    var path: [2]z.Segment = undefined;
+    const finding = (try z.validate(Labels, map, &path)).?;
+    var buffer: [32]u8 = undefined;
+    const pointer = try finding.jsonPointer(&buffer);
+    a.free(key);
+    released = true;
+    try t.expectEqualStrings("/a~1~0", pointer);
+}
+
+test "binary native map keys cannot be silently rendered as Unicode JSON Pointers" {
+    const Bytes = z.Map(z.String(.{ .utf8 = false }), Count, .{});
+    var map: Bytes.Value = .empty;
+    defer map.deinit(a);
+    try map.put(a, "\xff", 0);
+    var path: [2]z.Segment = undefined;
+    const finding = (try z.validate(Bytes, map, &path)).?;
+    var buffer: [32]u8 = undefined;
+    try t.expectError(error.InvalidUtf8, finding.jsonPointer(&buffer));
+}

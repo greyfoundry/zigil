@@ -130,3 +130,9 @@ test "NFA compilation and scratch allocation failures never panic or leak" {
     defer schema.deinit();
     try t.expectError(error.WorkLimitExceeded, schema.validate(a, "\"a\"", .{ .max_work = 1 }));
 }
+
+test "malformed URI references fail before registry or pointer resolution" {
+    inline for (.{ "{\"$ref\":\"https://example.org/%zz\"}", "{\"$id\":\"https://example.org/has space\"}", "{\"$ref\":\"#/%\"}" }) |source| {
+        try t.expectError(error.InvalidSchemaUri, z.runtime.compile(a, source, &.{}, .{}));
+    }
+}

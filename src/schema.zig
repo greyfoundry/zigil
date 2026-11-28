@@ -120,10 +120,9 @@ fn build(comptime Rule: type, b: *Builder) anyerror!V {
             return result;
         },
         .optional => return nullable(Rule.ChildRule, b),
-        .field => {
-            if (@typeInfo(Rule.ChildRule.Value) == .optional) return error.UnsupportedConversion;
-            return if (Rule.config.nullable) nullable(Rule.ChildRule, b) else build(Rule.ChildRule, b);
-        },
+        // Presence/absence has meaning at a direct object-field boundary.
+        // Nested/root wrappers are not silently collapsed into ordinary values.
+        .field => return error.UnsupportedConversion,
         .default => {
             var result = try build(Rule.ChildRule, b);
             // Only scalar defaults have a canonical JSON representation here.
@@ -151,7 +150,8 @@ fn build(comptime Rule: type, b: *Builder) anyerror!V {
             var required = b.array();
             inline for (@typeInfo(T).@"struct".field_names) |name| {
                 const Child = @field(Rule.field_rules, name);
-                try b.put(&properties, name, try build(Child, b));
+                const property = if (@hasDecl(Child, "kind") and Child.kind == .field) try buildField(Child, b) else try build(Child, b);
+                try b.put(&properties, name, property);
                 const absent = if (@hasDecl(Child, "kind")) switch (Child.kind) {
                     .field => Child.config.optional,
                     .default => b.options.direction == .input,
@@ -237,4 +237,15 @@ fn nullable(comptime Child: type, b: *Builder) !V {
     try b.append(&variants, try b.typed("null"));
     try b.put(&result, "anyOf", variants);
     return result;
+}
+
+fn buildField(comptime Rule: type, b: *Builder) !V {
+    if (b.nodes == b.options.max_nodes) return error.SchemaNodeLimitExceeded;
+    if (b.depth == b.options.max_depth) return error.DepthLimitExceeded;
+    b.nodes += 1;
+    b.depth += 1;
+    defer b.depth -= 1;
+    const T = Rule.ChildRule.Value;
+    if (@typeInfo(T) == .optional or (@typeInfo(T) == .@"union" and @hasDecl(T, "zigil_presence"))) return error.UnsupportedConversion;
+    return if (Rule.config.nullable) nullable(Rule.ChildRule, b) else build(Rule.ChildRule, b);
 }

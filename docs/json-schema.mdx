@@ -24,7 +24,8 @@ validated values, with missing fields omitted, null preserved and unions using
 Conversion fails with `UnsupportedConversion` for arbitrary custom/refinement
 callbacks and transforms, native finite/binary float fidelity, byte strings,
 nontrivial byte lengths, prefix/suffix constraints, local syntax formats, complex
-defaults and ambiguous nullable-child presence rules. These checks are not silently
+defaults, presence wrappers outside direct object fields, and nullable/nested
+presence children. These checks are not silently
 dropped or replaced with unenforced annotations. Use code-point lengths when the
 intended constraint is JSON Schema `minLength`/`maxLength`. An invalid configured
 default fails with `InvalidDefault`.

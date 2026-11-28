@@ -13,7 +13,7 @@ custom callback failures use Zig errors, separate from invalid data.
 The foundation covers strings, integers, finite floats, booleans, enum subsets,
 optionals, structs, arrays, slices and custom predicates. Built-in rules allocate
 no heap memory, never transform input, and require no runtime dependencies.
-The API is experimental; there are no releases yet.
+The unreleased 1.0.0-rc.1 candidate awaits human API/security review.
 
 Start with the [compiled example](/quickstart), then read the
 [rule contracts](/validation-semantics) and [ownership requirements](/errors-ownership).
@@ -23,5 +23,8 @@ constraints such as a nonempty name, a port range or a maximum collection size.
 It does not make invalid pointers safe or replace a decoder for untrusted bytes.
 
 Strict owning JSON decoding is implemented; read [the decoding contract](/decoding).
-Configuration adapters, union schemas, composition, JSON Schema generation and
-OpenAPI integration remain later milestones.
+[Composition](/composition) includes native unions, tuples/maps, refinements,
+defaults, transforms and bounded recursion. [Schema export](/json-schema), the
+[offline evaluator](/runtime-schemas) and [OpenAPI fragments](/openapi) are
+implemented with explicit [conformance limits](/conformance). Read
+[candidate readiness](/readiness) before adoption.

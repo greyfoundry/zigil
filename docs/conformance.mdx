@@ -1,0 +1,40 @@
+---
+title: "Conformance profile"
+description: "Declared vocabulary coverage, pinned evidence and unsupported semantics."
+---
+
+This is a bounded Draft 2020-12 validation profile. It is not a claim of every
+possible dialect, metaschema, output format or ECMAScript pattern. Core builds
+require only Zig; pattern schemas require the optional native NFA build.
+
+| Vocabulary | Implemented semantics | Boundary |
+| --- | --- | --- |
+| Core | `$schema`, `$id`, `$defs`, `$anchor`, `$dynamicAnchor`, `$ref`, `$dynamicRef`, `$vocabulary`, `$comment` | Explicit offline registry, bounded evaluation, exact resulting URI spelling; arbitrary metaschema evaluation through refs unsupported |
+| Applicator | `prefixItems`, `items`, `contains`, `properties`, `patternProperties`, `additionalProperties`, `dependentSchemas`, `propertyNames`, `if`/`then`/`else`, `allOf`, `anyOf`, `oneOf`, `not` | Successful annotations merge; failed/speculative annotations do not leak |
+| Unevaluated | `unevaluatedItems`, `unevaluatedProperties` | Uses successful adjacent/ref/applicator evaluations at the correct instance location |
+| Validation | Types, constants/enums, exact multiples and bounds, code-point lengths, patterns, item/property/contains counts, uniqueness, required/dependent required | Numeric and traversal quotas apply; regex subset is explicit |
+| Metadata | Title, description, default, deprecated, readOnly/writeOnly, examples | Annotations; no default insertion, mutation, authorization or separate annotation-output API |
+| Format annotation | `format` | Does not assert email/date/network/domain formats |
+| Content | Encoding, media type, content schema annotations | No automatic content decoding or nested content assertion |
+| OpenAPI base | Shared 3.1/3.2 Schema Object dialect | Fragment assertions only; discriminator/XML/docs/example annotations do not alter validation |
+
+Unknown required vocabularies fail. Unknown optional vocabularies remain ignored
+annotations; known custom dialect vocabulary declarations may be supplied offline.
+Required format-assertion is unsupported. Historical/cross-draft evaluation and
+retired `dependencies` compatibility are not enabled. There is no implicit I/O.
+
+The MIT official validation suite is pinned to revision
+`e2a68a15cd490750fd6b95e604e4054d7d978d1f`, preserving original bytes in 86 JSON
+files plus licence and SHA-256 provenance. Applicable mandatory instances: 1,319
+passed, zero failed, zero unsupported, zero operational errors. Another 138 optional
+instances pass. Two optional cross-draft instances report unsupported dialect;
+40 optional-profile instances (format assertion/retired dependencies) and 1,428
+dialect/tag-inapplicable instances are excluded with explicit profile classification.
+The separate annotations-output corpus is not part of this claim.
+
+`zig build conformance -Dschema-regex=true` reports actual counts and fails for
+mandatory unsupported behavior, mismatches or operational errors. Its budgets are
+larger than default application budgets. `tools/check-conformance-source.py`
+verifies upstream bytes and inventory. The independent Python export oracle
+checks schema validity and 34 declared-domain decoder equivalences separately.
+Human review and broader real-world testing remain necessary.

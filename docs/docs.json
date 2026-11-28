@@ -15,6 +15,7 @@
           "index",
           "quickstart",
           "status",
+          "readiness",
           "design"
         ]
       },
@@ -27,6 +28,7 @@
           "errors-ownership",
           "json-schema",
           "runtime-schemas",
+          "conformance",
           "compatibility",
           "security",
           "openapi",

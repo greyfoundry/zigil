@@ -7,8 +7,9 @@ support policy is established.
 For a suspected vulnerability, use GitHub's private vulnerability reporting when
 the repository offers it. Otherwise contact a Greyfoundry maintainer through an
 existing private channel and request a reporting route. Do not post exploit data,
-secrets or sensitive payloads in a public issue. Private reporting availability
-has not been configured or asserted by this foundation.
+secrets or sensitive payloads in a public issue. Private vulnerability reporting was observed disabled on 28 November 2026.
+A maintainer must enable it or establish a verified private route before release;
+the agent has not changed security settings. Secret scanning was also disabled.
 
 Validate external input only after a safe decoder has produced valid native Zig
 values. This API cannot make dangling pointers, fabricated slices, undefined

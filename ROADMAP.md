@@ -14,7 +14,7 @@ deployment require separate authorization. No dates or 1.0 readiness are promise
 | P5 | Deterministic Draft 2020-12 export; explicit unsupported conversion | Implemented for declared representable rules; independent comparisons pass |
 | P6 | Optional external-schema evaluator, offline registries and pinned conformance | Implemented declared 2020-12 profile; 1,319 mandatory fixtures pass locally |
 | P7 | OpenAPI 3.1/3.2 fragments, fuzzing, benchmarks and platform hardening | Implemented; long mutation campaign and cold benchmark recorded; final CI pending |
-| P8 | Stable contracts, release candidate, support policy and Zig 1.0 migration | Planned |
+| P8 | Stable contracts, release candidate, support policy and Zig 1.0 migration | Candidate/proposed contracts and artifact tooling prepared; human/security/support approval gates pending |
 
 Alpha follows verified P0-P3; beta follows P5; release-candidate and mature gates
 require the declared standards scope, resource/security evidence, supported native

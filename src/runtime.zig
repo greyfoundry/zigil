@@ -357,6 +357,19 @@ fn withoutFragment(uri: []const u8) []const u8 {
 }
 fn resolveUri(allocator: Allocator, base: []const u8, reference: []const u8) ![]const u8 {
     if (base.len > 16_384 or reference.len > 16_384) return error.UriLimitExceeded;
+    // URI syntax is separate from JSON syntax. The stdlib parser alone accepts
+    // some characters and percent sequences that are not valid URI references.
+    inline for (.{ base, reference }) |uri| {
+        var position: usize = 0;
+        while (position < uri.len) : (position += 1) {
+            const byte = uri[position];
+            if (byte <= 0x20 or byte >= 0x7f or std.mem.indexOfScalar(u8, "<>\\\"{}|^`", byte) != null) return error.InvalidSchemaUri;
+            if (byte == '%') {
+                if (uri.len - position < 3 or !std.ascii.isHex(uri[position + 1]) or !std.ascii.isHex(uri[position + 2])) return error.InvalidSchemaUri;
+                position += 2;
+            }
+        }
+    }
     const parsed = std.Uri.parse(base) catch return error.InvalidSchemaUri;
     const sum = std.math.add(usize, base.len, reference.len) catch return error.InputLimitExceeded;
     const capacity = std.math.mul(usize, sum, 2) catch return error.InputLimitExceeded;

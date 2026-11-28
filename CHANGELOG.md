@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## Unreleased — 1.0.0-rc.1 review candidate
+
+- Rejected ambiguous nested/root presence export instead of broadening wire nullability.
+
+- Prepared a proposed API/migration contract, non-exhaustive machine codes, explicit readiness gates and audited source-candidate generation with checksums, SPDX inventory and compiler/commit provenance.
+- Hardened malformed URI references, charged explicit Unicode code-point scans separately, and clarified native map-key borrowing.
 
 - Fixed strict float decoding at subnormal half-step boundaries and f80 explicit-leading-bit precision; added regression tests.
 

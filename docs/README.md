@@ -4,7 +4,7 @@
 root. The supplied bootstrap configuration defines the navigation and green theme. The library
 does not depend on Node or Mintlify.
 
-For local docs work, install the current `mint` CLI and run `mint validate` and
+For local docs work, use the CI-pinned `mint@4.3.96` CLI and run `mint validate` and
 `mint broken-links` from this directory. Preview with `mint dev --no-open`.
 Use CLI telemetry opt-out if appropriate to your environment.
 

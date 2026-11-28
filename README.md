@@ -1,14 +1,16 @@
 # Zigil
 
-Native value validation for Zig, maintained by Greyfoundry under Apache-2.0.
+Native validation and JSON schema tools for Zig, maintained by Greyfoundry under Apache-2.0.
 
 Zigil adds constraints to native Zig types: string length and UTF-8, numerical
 bounds, booleans, enum subsets, optionals, structs, arrays, slices and custom
 predicates. Rules are defined at compile time; values can be checked at runtime.
-Built-ins allocate no heap memory and leave input unchanged.
+Typed validation built-ins allocate no heap memory and leave input unchanged.
 
-**Experimental foundation, no releases.** The public API is under review. Pin a
-reviewed commit before adopting it. There are no runtime dependencies or services.
+**Unreleased 1.0.0-rc.1 review candidate.** Human API/security review and release
+authorization remain pending. Pin a reviewed commit before adopting it. Core
+builds use only the Zig standard library; the optional native regex backend is
+pinned separately. No external runtime or service is required.
 
 ## Example
 
@@ -44,7 +46,7 @@ issue borrows the supplied path buffer; inspect or copy it before reusing it.
 
 ## Build and verify
 
-Use **Zig 0.17.1**. From a checkout containing the foundation:
+Use **Zig 0.17.1**. From a checkout:
 
 ```sh
 zig build check test docs run-examples
@@ -52,8 +54,8 @@ zig build test -Doptimize=ReleaseSafe
 bash tools/check-consumer.sh
 ```
 
-The consumer check fetches the actual source allowlist and builds/runs an
-independent project outside the repository. Bash and tar are needed for that
+The consumer check fetches the actual source allowlist, compiles its distributed
+examples with Zig only, and builds/runs an independent project outside the repository. Bash and tar are needed for that
 check; the library and its native tests require only Zig.
 
 For another build graph, add this checkout as a Zig package dependency named
@@ -67,7 +69,8 @@ For another build graph, add this checkout as a Zig package dependency named
 - Validation is fail-fast and returns `!?Issue`: null succeeds; an issue has a code,
   a path borrowing caller storage, and a static message without raw input values.
 - Struct rules must cover every native field with exactly matching types.
-- String length counts bytes; UTF-8 validation is on by default. Floats must be finite.
+- String length counts bytes or explicitly selected Unicode code points; UTF-8
+  validation is on by default. Floats must be finite.
 - `Optional` uses `?T`. Missing versus explicitly null belongs to decoding.
 - Path exhaustion and resource limits return Zig errors, including for valid input.
 - `Issue.jsonPointer` renders RFC 6901 paths into caller-provided byte storage.
@@ -76,8 +79,18 @@ For another build graph, add this checkout as a Zig package dependency named
 
 Strict owning JSON decoding is available through `decodeJson`; see the
 [decoding contract](docs/decoding.mdx) and compiled `examples/json.zig`.
-Tagged-union schemas, accumulated errors, JSON Schema and OpenAPI generation
-remain later milestones. Zigil cannot repair invalid pointers, undefined data or unsafe casts.
+Composition includes tagged unions, tuples/maps, refinements, explicit defaults/
+transforms and bounded recursive rules. [Schema export](docs/json-schema.mdx)
+emits deterministic Draft 2020-12 for representable constraints; unsupported
+conversion fails explicitly. The [offline runtime evaluator](docs/runtime-schemas.mdx)
+passes the declared [conformance profile](docs/conformance.mdx). [OpenAPI 3.1/3.2
+fragments](docs/openapi.mdx) reuse the shared Schema Object dialect.
+
+The native suite, failure injection, 176,800-case mutation campaign, independent
+export oracle and packaged consumer provide evidence; they do not replace human
+security review. See [candidate readiness](MATURITY.md), [proposed API contract](API_CONTRACT.md),
+[migration notes](MIGRATION.md) and [release procedure](RELEASING.md). Diagnostics
+remain fail-fast. Zigil cannot repair invalid pointers, undefined data or unsafe casts.
 
 Read the [rule contracts](docs/validation-semantics.mdx), [ownership](docs/errors-ownership.mdx),
 [design decisions](docs/design.mdx), [compatibility](COMPATIBILITY.md), and

@@ -46,7 +46,8 @@ Reference cycles consume depth/work and produce an operational limit error.
 
 Compilation has schema-node, work, registry-entry/byte and JSON parser/allocation
 limits. Validation has work, evaluation depth and JSON parser/allocation limits.
-URI inputs are capped at 16,384 bytes. Hard parser/evaluation nesting caps are 256.
+URI inputs are capped at 16,384 bytes; malformed percent escapes, spaces, control
+bytes and unescaped non-ASCII are rejected. Hard parser/evaluation nesting caps are 256.
 Diagnostic output is fail-fast. Allocation budgets count cumulative arena requests;
 compilation can also hold one temporary bounded registry parse at a time. Bounds
 are enforced without trusting an instance or schema's claimed sizes.
