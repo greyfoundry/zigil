@@ -182,7 +182,7 @@ const DecodeContext = struct {
     }
 
     fn push(self: *DecodeContext, segment: core.Segment) !void {
-        if (self.depth == self.path.len) return error.DepthLimitExceeded;
+        if (self.depth == self.path.len or self.depth >= self.options.validation.max_depth) return error.DepthLimitExceeded;
         self.path[self.depth] = segment;
         self.depth += 1;
     }
@@ -221,7 +221,7 @@ fn fromRule(comptime Rule: type, value: Value, ctx: *DecodeContext) anyerror!Rul
     switch (Rule.kind) {
         .refinement, .default => return fromRule(Rule.ChildRule, value, ctx),
         .recursive => {
-            if (ctx.recursion_depth == ctx.options.max_depth) return error.DepthLimitExceeded;
+            if (ctx.recursion_depth == ctx.options.max_depth or ctx.recursion_depth >= ctx.options.validation.max_depth) return error.DepthLimitExceeded;
             ctx.recursion_depth += 1;
             defer ctx.recursion_depth -= 1;
             try ctx.charge(1);

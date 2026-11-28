@@ -52,3 +52,6 @@ Native conversion uses the validation work budget, followed by domain validation
 A malformed syntax offset identifies the scanner position; it is not a raw input
 excerpt. JSON parsing reuses std.json rather than introducing another JSON parser.
 Binary byte strings are a native validation domain; JSON strings must be valid UTF-8.
+
+Conversion paths and recursive providers respect the native validation depth
+ceiling as well as the parser ceiling, before invoking field transforms.

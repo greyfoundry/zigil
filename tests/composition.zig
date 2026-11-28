@@ -195,3 +195,9 @@ test "recursive providers without field edges terminate before exhausting the na
     try t.expectEqual(@as(?z.Issue, null), try z.validateWithLimits(z.Boolean(null), true, &path, .{ .max_depth = 257 }));
     try t.expectError(error.DepthLimitExceeded, z.validateWithLimits(Loop, true, &path, .{ .max_depth = std.math.maxInt(usize) }));
 }
+
+test "decoding rejects exhausted native path budgets before a field transform callback" {
+    const Wrapper = struct { value: []const u8 };
+    const Rule = z.Struct(Wrapper, .{ .value = z.Transform(Text, Text, unavailable) });
+    try t.expectError(error.DepthLimitExceeded, z.decodeJson(Rule, a, "{\"value\":\"valid\"}", .{ .validation = .{ .max_depth = 0 } }));
+}

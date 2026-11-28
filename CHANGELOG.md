@@ -2,6 +2,8 @@
 
 ## Unreleased — 1.0.0-rc.1 review candidate
 
+- Enforced native depth budgets during conversion before field transform callbacks.
+
 - Bounded recursive-provider re-entry independently from visible field paths in native validation and decoding.
 
 - Corrected boolean-schema diagnostic locations to identify the actual boolean node.
