@@ -1,0 +1,28 @@
+---
+title: "Compiler and platform compatibility"
+sidebarTitle: "Compatibility"
+description: "Verified compiler baseline and the difference between execution and cross-compilation."
+keywords: ["Zigil", "Zig", "platforms"]
+---
+
+The baseline is Zig 0.17.1, verified against the official release index and an
+SHA-256 checked official Linux distribution. Local tests execute on x86_64 Linux.
+The public tests and example cross-compile for aarch64 Linux, x86_64 Windows and
+aarch64 macOS. Those builds do not establish native runtime correctness there.
+
+CI is configured for native Linux, Windows and macOS and representative cross targets.
+Read results for the exact commit before treating a configured target as tested.
+The package is an unreleased 1.0.0-rc.1 review candidate.
+
+SDK SemVer, compiler versions, JSON Schema dialects and OpenAPI versions are
+independent. Draft 2020-12 uses the declared [conformance profile](/conformance);
+OpenAPI 3.1/3.2 cover [Schema Object fragments](/openapi), not whole documents. Zig 1.0 readiness means minimizing demonstrated migration
+cost, not promising source compatibility with an unreleased compiler.
+
+A pinned 0.18 development compiler probe is advisory in CI; it does not grant
+nightly support or weaken the required stable checks. It exposed managed/unmanaged std.json.Array churn; the candidate isolates that
+actual difference. Consult the exact candidate job before relying on a probe.
+
+Required native CI passed the P6 checkpoint on Linux/Windows/macOS, including
+optional NFA and official conformance. Final candidate results are recorded in
+the repository's MATURITY.md; do not infer them solely from CI configuration.

@@ -1,0 +1,30 @@
+---
+title: "Validate native Zig values with Zigil"
+sidebarTitle: "Introduction"
+description: "Add value constraints and structured failure paths to native Zig types."
+keywords: ["Zig", "validation", "Zigil"]
+---
+
+Zigil checks value constraints on native Zig values. You keep your structs and
+choose compile-time rules for their fields. Validation returns the first issue
+with field and index segments in caller-owned storage. Resource exhaustion and
+custom callback failures use Zig errors, separate from invalid data.
+
+The foundation covers strings, integers, finite floats, booleans, enum subsets,
+optionals, structs, arrays, slices and custom predicates. Built-in rules allocate
+no heap memory, never transform input, and require no runtime dependencies.
+The unreleased 1.0.0-rc.1 candidate awaits human API/security review.
+
+Start with the [compiled example](/quickstart), then read the
+[rule contracts](/validation-semantics) and [ownership requirements](/errors-ownership).
+
+Zig already checks native field types, numeric widths and enum types. Zigil adds
+constraints such as a nonempty name, a port range or a maximum collection size.
+It does not make invalid pointers safe or replace a decoder for untrusted bytes.
+
+Strict owning JSON decoding is implemented; read [the decoding contract](/decoding).
+[Composition](/composition) includes native unions, tuples/maps, refinements,
+defaults, transforms and bounded recursion. [Schema export](/json-schema), the
+[offline evaluator](/runtime-schemas) and [OpenAPI fragments](/openapi) are
+implemented with explicit [conformance limits](/conformance). Read
+[candidate readiness](/readiness) before adoption.

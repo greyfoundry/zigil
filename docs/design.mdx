@@ -1,0 +1,109 @@
+---
+title: "Why rules reuse native Zig types"
+sidebarTitle: "Design"
+description: "The foundation's type, ownership and decoding boundaries and their sources."
+keywords: ["Zigil", "design", "comptime"]
+---
+
+Zigil combines native struct reflection with external compile-time rule maps.
+You keep the native type as the source of truth; a rule map supplies constraints
+that the type alone cannot express. The compiler checks complete field coverage
+and exact field-rule type agreement. The generated validator uses ordinary native
+control flow, without an interpreted schema registry.
+
+This leaves types usable by other code and lets the same native struct have
+different constraints in different contexts. It also makes adding a field an
+explicit validation decision. The cost is some repeated field names and strict
+type matching. Mutable/sentinel slice ergonomics need consumer feedback.
+
+An embedded-declaration-only approach would modify consumer types and make foreign
+types awkward. A runtime builder would introduce schema lifetime and dispatch
+contracts before a consumer needs them. Neither is necessary for this foundation.
+
+## Design influences
+
+- [Zod](https://github.com/colinhacks/zod) informs discoverable constraints and
+  structured issue paths. JavaScript's dynamic value model is not reproduced.
+- [Valibot](https://github.com/fabian-hiller/valibot) informs small independent
+  rule units. A transformation pipeline is not required for validation-only use.
+- [ArkType](https://github.com/arktypeio/arktype) illustrates constraint analysis
+  ahead of validation. Zig's compiler provides specialization without adding a
+  string-based type language or a set-algebra engine.
+- [Ajv](https://github.com/ajv-validator/ajv) separates schema compilation from
+  repeated validation. Zigil uses compile-time definitions rather than runtime
+  JavaScript code generation or dynamic JSON Schema interpretation.
+- [Pydantic](https://github.com/pydantic/pydantic) highlights the need to make
+  strictness and coercion explicit. This API validates values without coercion.
+- [Serde](https://github.com/serde-rs/serde) makes borrowing versus ownership
+  central at decoding boundaries. It is a serialization framework, not a direct
+  substitute for value-constraint validation.
+- [Rust validator](https://github.com/Keats/validator) demonstrates field and nested
+  validation associated with native structs. Zig reflection replaces derive macros.
+
+Relevant Zig sources include
+[validate.zig](https://github.com/karlseguin/validate.zig),
+[Zigantic](https://github.com/muhammad-fiaz/zigantic),
+[pascalPost's JSON Schema validator](https://github.com/pascalPost/json-schema-validator),
+and [zig-validate](https://github.com/mov-rax/zig-validate). They address different
+layers: JSON-centered runtime validators, broader schemas, JSON Schema compliance,
+and generic interface checking respectively. Zigil adopts none as a dependency.
+
+Archived [Getty](https://github.com/getty-zig/getty),
+[Getty JSON](https://github.com/getty-zig/json) and
+[tres](https://github.com/ziglibs/tres) provide historical decoding and optional-value
+lessons. [megaNour/json-schema](https://github.com/megaNour/json-schema) is a scaffold
+at the reviewed revision and has no root licence file; it is not a code-reuse source.
+Archive status and reviewed commits were checked on 27 November 2026. Maintenance
+and compatibility must be rechecked before adopting any dependency.
+
+Greyfoundry's [Diszig](https://github.com/greyfoundry/diszig) and
+[Identifold](https://github.com/greyfoundry/identifold) inform explicit contracts,
+failure-path tests, consumer verification and contribution transparency.
+Compiler behavior follows the [official Zig toolchain](https://ziglang.org/download/)
+and its installed standard library. These are design references, not transferred
+implementation code or performance evidence.
+
+## Boundaries kept small
+
+Fail-fast issues borrow caller-provided path storage. Collecting multiple errors
+would need a separate capacity and lifetime contract; it can follow real usage.
+Parsing and transformations stay outside typed validation. Compile-time execution
+is available for known values, while external data must be checked at runtime.
+No speed or zero-overhead claim follows from using `comptime`.
+
+
+## P0 declaration comparison
+
+Three small compiler-tested probes used the same User and nested ServerConfig
+examples and a shared validation kernel. This narrower experiment compares how
+schemas are declared, not three independently optimized engines. All three
+compiled, ran, and reported the same nested `user` / `name` failure path using
+Zig 0.17.1 on x86_64 Linux, with no allocator in the built-in validation path.
+
+| Declaration | Native types | Result |
+| --- | --- | --- |
+| Reflection with embedded rules | Consumer structs contain a rule declaration | Works; ties the declaration to the type owner |
+| Typed combinators | Rules generate the native struct using `@Struct` | Works; makes the schema the type source rather than reusing a foreign DTO |
+| External native-type/rule hybrid | Independent structs plus exact matching rules | Selected; preserves native type ownership and alternate rule sets |
+
+A single sequential ReleaseSafe executable build per probe took 16.393, 15.813
+and 15.707 seconds respectively. Unstripped executable sizes were 3,757,872,
+3,757,848 and 3,757,816 bytes. These include the shared runtime and debug metadata;
+cache state and single samples make them unsuitable for performance ranking.
+No runtime speed comparison or zero-overhead claim follows from these results.
+
+The public compile-fail fixtures verify missing fields, unknown fields, mismatched
+native types, contradictory limits, non-finite bounds, invalid enum choices,
+overflowing literals and incorrect custom return types. The independent consumer
+verifies the selected public package interface. Schema-generated types avoid some
+field-rule drift by construction but do not meet the foreign-native-type goal as
+directly. Embedded declarations remain a straightforward user-side wrapper.
+
+The stable compiler baseline is the verified official 0.17.1 distribution.
+Standards references were pinned separately for later phases: JSON Schema spec
+`6c537d36f4781f48c27015e7f2bddaf7bcac0308`, official test suite
+`e2a68a15cd490750fd6b95e604e4054d7d978d1f`, and OpenAPI specification
+`4f86429f134f7e48b6351563549b4502fc69de52`. Acquisition is not conformance evidence.
+The JSON Schema repository's code and specification-text licence notices differ;
+review the actual source licence before transferring either. No corpus is shipped
+in the package.

@@ -1,0 +1,28 @@
+---
+title: "OpenAPI fragments"
+description: "Schema Object fragments for OpenAPI 3.1 and 3.2 with explicit boundaries."
+---
+
+`openapi.exportSchema(Rule, allocator, schema_options)` returns an owning fragment
+with the same lifetime, direction, bounds and unsupported-conversion behavior as
+Draft 2020-12 export. Deinit it after copying or using its `json` bytes.
+
+OpenAPI 3.1 and 3.2 both identify their Schema Object base dialect as
+`https://spec.openapis.org/oas/3.1/dialect/base`. The fragment uses that URI.
+There is no invented `3.2/dialect/base` URI. This was checked against the pinned
+OpenAPI specification sources and the published
+[3.2 specification](https://spec.openapis.org/oas/v3.2.0.html#schema-object).
+
+`runtime.compile` accepts this shared dialect and evaluates the declared JSON
+Schema assertions. OpenAPI annotations such as `discriminator`, `xml`, `externalDocs`,
+`readOnly`, `writeOnly` and formats do not change validation outcomes. In particular,
+a discriminator does not make an ambiguous `oneOf` valid. Application request and
+response policies remain separate. Input/output export directions preserve the
+explicit default/presence contract; they do not perform authorization or strip fields.
+
+This adapter produces Schema Object fragments for insertion into an API document.
+It does not generate operations, resolve component paths without an explicit
+registry, validate whole OpenAPI documents, serialize HTTP payloads or support
+OpenAPI 3.0's different schema/nullable model. Unsupported native constraints still
+fail rather than disappearing. See `examples/api.zig` for a compiled request and
+fragment example.

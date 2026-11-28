@@ -1,0 +1,46 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Zigil",
+  "colors": {
+    "primary": "#416B5B",
+    "light": "#9BD8B7",
+    "dark": "#315344"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Start here",
+        "pages": [
+          "index",
+          "quickstart",
+          "status",
+          "readiness",
+          "design"
+        ]
+      },
+      {
+        "group": "Contracts",
+        "pages": [
+          "validation-semantics",
+          "decoding",
+          "composition",
+          "errors-ownership",
+          "json-schema",
+          "runtime-schemas",
+          "conformance",
+          "compatibility",
+          "security",
+          "openapi",
+          "hardening"
+        ]
+      },
+      {
+        "group": "Project",
+        "pages": [
+          "contributing"
+        ]
+      }
+    ]
+  }
+}

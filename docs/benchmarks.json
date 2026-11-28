@@ -1,0 +1,125 @@
+{
+  "source": {
+    "git_commit": "b423377936102c61486a17b8ea78ad058d279b40",
+    "worktree_dirty": true,
+    "source_files_sha256": "6480fb9dcc1abcebb044210dd023d53cf4ddbddc628bd67f8ff6265695825034",
+    "source_files": [
+      "bench/main.zig",
+      "build.zig",
+      "build.zig.zon",
+      "src/core.zig",
+      "src/decimal.zig",
+      "src/formats.zig",
+      "src/json.zig",
+      "src/openapi.zig",
+      "src/patterns.zig",
+      "src/root.zig",
+      "src/runtime.zig",
+      "src/schema.zig"
+    ],
+    "hash_method": "sorted relative path + NUL + bytes + NUL; authoritative source snapshot when worktree is dirty",
+    "file_sha256": {
+      "bench/main.zig": "567884a6fce1fa9d51b0e720318d9b8cdf736b4ab98b59cf2eeee98346b6a67d",
+      "build.zig": "83eafe57b436f56b049b2996b9e248f133a3a5beb623cd8fb7cfbf266aec29c4",
+      "build.zig.zon": "c14ab08f2fd835292fd3c7a46d06996169a9369749e13566ed293ec4bd76013c",
+      "src/core.zig": "55d1a84bc924d331940a12835343d993315dd089054c34c4cf6c6411c6126a28",
+      "src/decimal.zig": "71916992bfcdeb7f96448befa3380e80d3daf8b2f863592301ab39e7b652be85",
+      "src/formats.zig": "63786a4e106d2424bac197be700d5d2b3958c9b7ddf46bcaa4460bc3d4f76787",
+      "src/json.zig": "326c13404eaf73c3d746294e7a1ac760ea8984368b2002828dae11eb9a2a013a",
+      "src/openapi.zig": "a7a6647e49cb672cdf659c29923c33c8dbcf0c9187737940b4b7796eaf61cf7b",
+      "src/patterns.zig": "4586c2a8fe8a834d3cd31284d5f0c3dccd218d35d9dc450c285fb316cafad958",
+      "src/root.zig": "039be006c15d6e3561edf97e19b6109f299c0844daaf7ac34870e4ed6d06f52e",
+      "src/runtime.zig": "3553108f740cc8e6265d26711c6951b46916f33e7e3d744eb95305f97846ce7e",
+      "src/schema.zig": "450faed10ed27b4420b986b65edf874793a07832f669326842b6ee894acc0726"
+    },
+    "subsequent_metadata_change": "Baseline recorded before final presence-export, diagnostic, recursive-budget and package allowlist refinements. Per-file hashes identify measured sources; this is not a candidate-wide fresh measurement."
+  },
+  "scope": "128 bounded native struct fixtures; identical first issue code/field and constraints. Fail-fast; five invalid fixture categories and one valid. Not a library-wide comparison.",
+  "environment": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "compiler": "0.17.1",
+    "mode": "ReleaseSafe",
+    "shared_host": true
+  },
+  "method": {
+    "warmup_iterations_per_implementation": 5000,
+    "sample_order": "direct then zigil, repeated; potential order bias",
+    "clock": "monotonic awake",
+    "fresh_local_and_global_build_cache": true,
+    "build_wall_seconds": 124.59938935500008,
+    "binary_bytes": 4338304,
+    "runtime_peak_rss_kib": 9088
+  },
+  "metadata": {
+    "zig": "0.17.1",
+    "mode": "safe",
+    "iterations_per_sample": 100000,
+    "samples": 21,
+    "fixtures": 128,
+    "invalid_fixtures": 112,
+    "seed": "0x5a4947494c",
+    "native_validation_allocations": 0,
+    "direct_allocations": 0,
+    "example_decode_cumulative_requested_bytes": 6253,
+    "checksum": 3683750
+  },
+  "batch_per_operation_nanoseconds": {
+    "direct": {
+      "median": 5.35817,
+      "p95_of_21_batch_means": 6.84068,
+      "samples": [
+        5.36889,
+        5.36649,
+        6.84068,
+        6.59322,
+        5.11111,
+        5.3048,
+        5.34465,
+        5.23449,
+        5.74464,
+        5.56268,
+        5.9109,
+        5.11932,
+        5.33003,
+        5.31962,
+        8.99969,
+        5.42487,
+        5.35817,
+        5.1732,
+        5.12523,
+        5.23218,
+        5.97019
+      ]
+    },
+    "zigil": {
+      "median": 7.13722,
+      "p95_of_21_batch_means": 8.67901,
+      "samples": [
+        6.74534,
+        9.09423,
+        7.729,
+        7.69415,
+        8.67901,
+        7.18309,
+        6.63337,
+        6.84699,
+        8.13921,
+        7.13722,
+        7.02445,
+        7.21254,
+        6.63026,
+        6.74844,
+        7.30487,
+        7.24698,
+        6.87613,
+        7.15205,
+        6.83857,
+        6.54975,
+        6.65811
+      ]
+    }
+  },
+  "limits": "Batch means are not individual-operation tail latency. Cold build time includes standard-library compilation and link work. RSS is whole-process peak, not allocation count. Fixed sample order and a shared host limit comparisons. No regression threshold or cross-language speed claim."
+}

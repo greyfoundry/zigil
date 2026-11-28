@@ -1,0 +1,59 @@
+---
+title: "Own input and error storage explicitly"
+sidebarTitle: "Ownership"
+description: "Borrowed input, reusable path buffers, lifetimes and concurrency limits."
+keywords: ["Zigil", "ownership", "allocation", "errors"]
+---
+
+You own the input and the path buffer. Built-in validation only reads the input
+and writes path segments into the supplied buffer. It does not allocate, retain,
+copy or release input buffers. Rules have no runtime state or global registry.
+
+| Data | Owner and lifetime |
+| --- | --- |
+| Input structs, arrays and backing slice storage | Caller; valid and stable throughout validation |
+| Path segment buffer | Caller; writable during validation, alive and unchanged while an issue is inspected |
+| `Issue.path` | Borrowed view into the caller's segment buffer |
+| Field names and built-in/custom messages | Static compile-time schema storage |
+| Decoded values and parser arenas | Decoder/caller; clean up using the decoder's contract |
+
+A successful call returns `null`. A failed call returns one `Issue` by value;
+copying it copies the slice descriptor, not its backing path. Copy the path
+segments to separately owned storage if the issue must outlive buffer reuse.
+Do not return an issue pointing to a function-local path array.
+
+No cleanup is required for built-in validation itself. The caller decides whether
+the path buffer lives on the stack or comes from an allocator. Zigil does not
+silently fall back to heap storage when it is full: `error.PathCapacityExceeded` requires the caller to provide
+more storage. No invalid-data issue is returned for that incomplete traversal.
+
+Path capacity counts struct-field and collection-index edges. Optional wrappers
+do not add a segment. A path requires storage even on successful traversal.
+For a known fixed schema you can determine the maximum path depth in advance.
+
+## Concurrency and work bounds
+
+You may reuse rules across threads. Each concurrent call needs its own path buffer
+and input that is safe to read. The returned issue shares that call's buffer.
+Custom predicates may impose additional synchronization requirements.
+
+Schemas are fixed at compile time. Validation work depends on the selected rules
+and input size; text checks scan bytes and collections traverse elements. Set
+maximum lengths for untrusted values and bound payload size before parsing. No
+cycle-following pointer traversal or arbitrary recursive schema engine is provided.
+
+Custom predicates are ordinary caller-provided functions. They must not retain
+borrowed input. Zigil cannot guarantee their allocation or execution behavior.
+The built-in allocation contract does not cover custom predicate side effects.
+
+
+A JSON Pointer rendered by `Issue.jsonPointer` borrows its separate output byte
+buffer. It can outlive the issue and path buffer if that output storage stays
+alive and unchanged. Rendering never allocates; insufficient output capacity is
+`error.NoSpaceLeft`. Error paths do not have a validity guarantee after an
+operational error, so inspect only an Issue returned by successful completion.
+
+Native map findings also borrow key bytes from the map value. Copying only the
+Segment array does not own those bytes. Keep the map's keys alive or deep-copy
+them; rendering JSON Pointer into your own byte buffer produces an independent
+text copy. Owning decoder/runtime findings retain their own key storage.

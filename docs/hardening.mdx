@@ -1,0 +1,45 @@
+---
+title: "Hardening and measurements"
+description: "Reproducible mutation campaigns, failure checks and scoped benchmarks."
+---
+
+Native unit tests exercise allocation failure at every allocation point in owning
+JSON, transforms, schema export, runtime schemas and optional regex compilation/
+scratch storage. Tests distinguish invalid input, malformed syntax, unsupported
+semantics, work/depth/size quotas and true allocator failures. Runtime findings
+are checked after the compiled schema is destroyed. Cyclic borrowed native data
+and reference cycles terminate at operational limits.
+
+Normal tests run three reproducible campaigns: 512 byte mutations of JSON instances
+(seed `0x5a4947494c`), 256 schema mutations (`0x534348454d41`) and 1,000 exact decimal
+conversion cases (`0x444543494d414c`). Instance mutations compare the native decoder
+and the equivalent external schema; decimal cases compare checked integral arithmetic.
+Known resource/syntax failures are classified explicitly; unexpected errors fail tests.
+These are bounded mutation campaigns, not a claim of exhaustive coverage-guided fuzzing.
+
+Run a longer campaign with `zig build test -Dfuzz-rounds=100
+-Dschema-regex=true -Doptimize=ReleaseSafe`. This executes 176,800 deterministic
+cases with leak checking. The multiplier is bounded to 1..100. CI runs the default
+campaign on pull requests. The workflow defines longer manual/weekly campaigns
+that become available when it reaches the default branch; no merge is implied.
+
+`zig build bench -Doptimize=ReleaseSafe` measures a small, bounded native struct
+against direct Zig checks with the same UTF-8/length/integer constraints, first
+issue code and field. It verifies agreement before timing. Both validation paths
+allocate nothing; owning decode allocation requests are reported separately.
+This does not measure an entire application or imply performance against other
+languages or schema engines.
+
+`ZIG=/path/to/zig python3 tools/run-benchmarks.py` builds with fresh local/global
+caches, records compiler/platform/CPU, executable bytes, build wall time, process
+peak RSS where available, and 21 batches per implementation after warmup. The
+checked-in `benchmarks.json` contains actual samples. Batch-derived medians and
+p95 values are not individual-call tail latency. Fixed direct-then-library order
+and the shared execution host can bias results. No regression threshold or
+performance marketing claim is established from this initial baseline.
+
+Required stable CI exercises native Linux, Windows and macOS, the optional native
+NFA, official conformance, compiled examples, repository/fixture provenance, docs
+and an independent fetched consumer artifact. Cross compilation and advisory
+compiler probes are recorded separately from native execution. Review the exact
+commit's jobs; configuration alone is not evidence of a pass.

@@ -1,0 +1,94 @@
+---
+title: "External JSON schemas"
+description: "Compile and evaluate bounded Draft 2020-12 schemas without implicit I/O."
+---
+
+`runtime.compile(allocator, schema_json, registry_entries, compile_options)` creates
+an owning `Compiled` handle. Its `validate(allocator, instance_json, options)`
+returns an owning `Result`: `valid`, `invalid` with a finding, or `malformed` with
+a byte offset. Move handles, do not copy them, and always call `deinit()`.
+Compilation errors distinguish malformed/duplicate schema JSON, invalid keyword
+forms, unsupported dialect/vocabulary/pattern and unresolved references.
+Operational budget and allocator failures are Zig errors, never invalid data.
+
+Compiled schemas are immutable after compilation and can be reused concurrently
+with independent validation allocators. Each result owns its diagnostics, paths
+and schema locations; it may outlive the compiled schema and original input.
+A finding contains a machine issue code, keyword, schema location and typed
+instance path. Boolean-false schemas use the label `false` and point at the
+boolean schema node itself, not a synthetic property. Values are not included in messages. Object keys and missing field
+names appear in paths, so apply logging/redaction policy to paths too. Schema locations contain identifiers
+from the schema and are untrusted text, not instructions to fetch/open a URI;
+applications must not automatically navigate arbitrary schemes.
+
+Only the declared Draft 2020-12 profile is implemented. Core references (`$id`,
+`$anchor`, `$ref`, `$dynamicAnchor`, `$dynamicRef`), validation, applicators and
+unevaluated properties/items are evaluated. Numbers compare exactly as normalized
+decimals, including `multipleOf`; string length counts Unicode code points.
+All successful `anyOf` branches contribute evaluated annotations. Failed branches,
+negated probes and nonmatching `contains` items do not contribute them.
+`additionalProperties` considers adjacent properties/patterns; it does not become
+`unevaluatedProperties` across references or `allOf`.
+
+Metadata, content keywords and `format` are annotations, not mutation or format
+assertions. Defaults are never inserted. Unknown keywords and unknown optional
+vocabularies remain annotations; unknown required vocabularies fail compilation.
+Custom dialect vocabulary declarations can be supplied in the explicit offline
+registry and control which known assertions/applicators apply. Evaluating a
+metaschema itself through `$ref` is explicitly unsupported; arbitrary custom
+metaschema validation is not claimed. Historical dialects and legacy `dependencies`
+compatibility are not enabled. There is no implicit network, filesystem, plugin
+loading, arbitrary callback execution or remote registry lookup.
+
+Registry entries are `{ uri, schema }`. Relative references use the standard
+library's RFC 3986 resolver. JSON Pointer fragments are percent-decoded and then
+`~0`/`~1` decoded. Resources and anchors are indexed explicitly; duplicate IDs and
+anchors fail. Resolution uses the resulting URI's exact spelling, with no extra
+host/scheme case or percent-encoding canonicalization. Unresolved references fail.
+Reference cycles consume depth/work and produce an operational limit error.
+
+Compilation has schema-node, work, registry-entry/byte and JSON parser/allocation
+limits. Validation has work, evaluation depth and JSON parser/allocation limits.
+URI inputs are capped at 16,384 bytes; malformed percent escapes, spaces, control
+bytes and unescaped non-ASCII are rejected. Hard parser/evaluation nesting caps are 256.
+Diagnostic output is fail-fast. Allocation budgets count cumulative arena requests;
+compilation can also hold one temporary bounded registry parse at a time. Bounds
+are enforced without trusting an instance or schema's claimed sizes.
+
+### Optional native regex
+
+The default package uses only Zig's standard library. Enable `schema-regex = true`
+in the dependency's build options (or `-Dschema-regex=true` for repository builds)
+to use the pinned native Pike VM backend. Without it, schemas containing `pattern`
+or `patternProperties` fail with `PatternEngineUnavailable`, even if a particular
+instance would not exercise them. See DEPENDENCIES.md for versions and licences.
+
+The adapter accepts a documented ECMAScript-compatible Unicode subset: literals,
+classes, ordinary/noncapturing groups, alternation, quantifiers, start anchors,
+terminal end anchors, Unicode properties and common escapes. ASCII digit/word
+shorthands, ECMAScript whitespace and line terminators are handled explicitly.
+Lookaround, backreferences, word boundaries, inline flags, nonterminal end anchors
+and unsupported escapes fail with `UnsupportedPattern`; no backtracking fallback
+is used. This is not a claim of complete ECMAScript regex support.
+
+Pattern input is capped at 1,024 bytes, group nesting at 32, bounded repetitions
+at 256 and expanded program size at 16,384 units. Matching is charged against
+work before execution using program instructions/ranges and input length. Scratch
+allocations use the validation arena; allocator failures propagate. This policy
+can reject a resource-heavy valid pattern or instance operationally.
+
+### Evidence and limits
+
+The checked-in MIT official corpus is pinned to
+`e2a68a15cd490750fd6b95e604e4054d7d978d1f`. `zig build conformance
+-Dschema-regex=true` currently passes 1,319 applicable mandatory and 138 optional
+instances: zero validity mismatches, mandatory unsupported cases or operational
+errors. Two optional cross-draft instances report unsupported dialect. Forty
+optional profile instances (format assertion and retired dependency compatibility)
+and 1,428 dialect/tag-inapplicable instances are explicitly excluded. Counts are
+not a proof of all possible schemas or inputs. The separate annotations-output
+corpus is not claimed; evaluated annotations are used internally for correctness.
+
+`tools/check-conformance-source.py` verifies all 86 fixture files and their
+upstream provenance. Changes to fixtures or profile require review. Human security
+review, platform CI and release gates remain separate from these local results.

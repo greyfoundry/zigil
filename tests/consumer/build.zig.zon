@@ -1,0 +1,8 @@
+.{
+    .name = .zigil_consumer,
+    .version = "0.0.0",
+    .fingerprint = 0x649f6f82771873b6,
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{ .zigil = .{ .path = "../package" } },
+    .paths = .{ "build.zig", "build.zig.zon", "main.zig" },
+}

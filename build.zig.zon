@@ -1,0 +1,14 @@
+.{
+    .name = .zigil,
+    .version = "1.0.0-rc.1",
+    .fingerprint = 0x8ecd97c2936384c4,
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{
+        .ezi_gex = .{
+            .url = "git+https://github.com/shaik-abdul-thouhid/ezi-gex.git#65d5477eca68905aa27ba08fba700a81f0bcab8d",
+            .hash = "ezi_gex-0.9.0-dev-fTQAPDxqKQAP5yAcw2FtPARTl8NFsMljTHYTmAXbX7rS",
+            .lazy = true,
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "examples", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.txt", "DEPENDENCIES.md", "README.md", "API_CONTRACT.md", "COMPATIBILITY.md", "CHANGELOG.md", "MIGRATION.md", "SECURITY.md", "AI_DISCLOSURE.md", "RELEASING.md", "MATURITY.md" },
+}

@@ -1,0 +1,108 @@
+---
+title: "Choose validation rules"
+sidebarTitle: "Rules"
+description: "Native types, value constraints and first-failure semantics for each rule."
+keywords: ["Zigil", "constraints", "schema"]
+---
+
+Define rules at compile time, then validate runtime values. Every rule exposes
+its native `Value` type. `validate` accepts that type using ordinary Zig argument
+coercions; Zigil performs no runtime coercion or transformation.
+
+| Constructor | Native value | Contract |
+| --- | --- | --- |
+| `String(options)` | `[]const u8` | Inclusive byte or explicitly selected code-point length, optional prefix/suffix, UTF-8 validation on by default |
+| `Int(T, bounds)` | Integer `T` | Optional inclusive `min`/`max`, represented exactly in `T` |
+| `Float(T, bounds)` | Floating-point `T` | Inclusive finite bounds; NaN and infinities always fail |
+| `Boolean(expected)` | `bool` | `null` accepts both; otherwise require the specified boolean |
+| `Enumeration(T, allowed)` | Enum `T` | `null` permits declared tags; a slice permits a subset, including an empty subset |
+| `Optional(Child)` | `?Child.Value` | Accept null, otherwise validate the present value |
+| `Struct(T, rules)` | Struct `T` | Exactly one matching rule per native field, checked in field declaration order |
+| `Slice(Child, limits)` | `[]const Child.Value` | Inclusive length limits, then element validation in index order |
+| `Array(len, Child)` | `[len]Child.Value` | Validate every element in index order |
+| `Custom(T, predicate, message)` | `T` | Synchronous function returning `bool` or an error union of `bool`; false reports the static message |
+
+String options are `length` (`min: usize = 0`, `max: ?usize = null`),
+`unit` (`.bytes` by default or `.code_points`), `utf8: bool = true`, `prefix: ?[]const u8 = null`, and
+`suffix: ?[]const u8 = null`. Slice limits use the same length fields.
+Numeric bounds default to no minimum or maximum.
+
+## Errors and ordering
+
+`Issue` contains `code`, `path` and a static `message`. Each path segment is a
+`.field` name or an `.index`. Root failures have an empty path. No offending values are placed in messages. Native map-key path segments borrow
+keys from the input map; retain those keys as well as path storage while reading
+the issue. Copy a rendered JSON Pointer or deep-copy key strings when needed.
+
+Validation stops at the first failure. Byte and collection size limits run before content scans or
+element traversal. Code-point counts require valid UTF-8 first. Strings check
+UTF-8, then code-point length when selected, then prefix/suffix.
+Numbers check the lower bound before the upper bound; floats check finiteness
+first. Resource budgets are checked before work and remain distinct from invalid
+data. A path buffer too small to traverse the value returns
+`error.PathCapacityExceeded`, even for an otherwise valid value.
+
+The machine-readable codes are `too_short`, `too_long`, `invalid_utf8`, `prefix`,
+`suffix`, `below_minimum`, `above_maximum`, `not_finite`, `boolean_mismatch`,
+`enum_value` and `custom`. Code is non-exhaustive; include an unknown-code branch. See API_CONTRACT.md for
+the complete proposed candidate contract, including decoding/runtime codes.
+
+Contradictory limits, non-finite bounds, undeclared enum choices, and missing,
+unknown or incorrectly typed struct rules fail compilation. Field-rule types must
+match exactly: for example, a mutable slice field is not silently converted to
+the immutable slice type exposed by `Slice` during schema construction.
+
+## Custom and optional values
+
+Custom predicates can validate scalar or whole-struct invariants. They receive
+the value synchronously and may return `bool` or an error union of `bool`. False
+returns a `custom` issue; callback errors propagate unchanged. They do not receive
+an allocator or traversal context.
+Keep them deterministic and bounded. Their allocation, synchronization and side
+effects are your responsibility. Use `Refine` to compose validated prerequisites and a predicate; see
+[composition](/composition) for tuples/maps/unions, defaults, transforms and recursion.
+
+`Optional` uses native nullability. A Zig optional does not encode missing versus
+explicitly null wire fields. Preserve that distinction in a decoder when needed.
+Zigil does not add a second nullable wrapper with identical semantics.
+
+String lengths count bytes by default or explicit Unicode code points; neither
+counts grapheme clusters. UTF-8 validation does not normalize text. Use `utf8 = false` only when the value is a byte string.
+
+
+## Operational errors and limits
+
+`validate` returns an inferred Zig error union containing `?Issue`. Success with
+`null` means valid, success with an issue means invalid, and a Zig error means
+validation did not complete. A caller must not turn an operational failure into
+successful validation or an ordinary domain issue.
+
+`validateWithLimits(Rule, value, path_buffer, limits)` accepts per-call limits.
+The default `validate` uses these values:
+
+| Limit | Default | Accounting |
+| --- | --- | --- |
+| `max_depth` | 64 | Struct-field/index path edges and recursive-provider re-entry, bounded independently |
+| `max_work` | 1,000,000 | Rule visits, compared enum choices and charged text bytes |
+| `max_bytes` | 1,048,576 | Sum of lengths passed to built-in String rules, before text processing |
+| `max_items` | 100,000 | Sum of lengths passed to built-in arrays/slices/tuples/maps, before iteration |
+
+Work charges one unit per rule visit, one per compared enum choice, the string
+length for UTF-8 checking (again for an explicit code-point scan), and the smaller of the value/constraint length for each
+configured prefix or suffix check. These are deterministic logical units, not
+CPU-time estimates. Counters are aggregate across siblings and use overflow-safe
+subtraction before incrementing. The root has path depth zero. Native path/provider traversal is hard-capped at 256. A larger configured ceiling
+still permits shallow native values but never raises that actual traversal cap.
+
+Errors are `PathCapacityExceeded`, `DepthLimitExceeded`, `WorkLimitExceeded`,
+`InputLimitExceeded`, and `ItemLimitExceeded`, plus any custom callback errors.
+Buffers are caller-owned, so built-in validation has no OOM allocation path.
+Budgets cover built-in traversal; they neither measure arbitrary native memory
+nor interrupt custom callback code. Bound raw payloads before decoding.
+
+`Issue.jsonPointer(output)` escapes `~` as `~0` and `/` as `~1`, keeps field names
+and index segments internally, and returns a slice borrowing `output`. The root
+is an empty string. A binary field/key name that is not valid UTF-8 returns `error.InvalidUtf8` rather
+than an invalid Unicode pointer. A short output buffer returns `error.NoSpaceLeft`; buffer
+contents are unspecified on that error. This returns the plain JSON Pointer,
+not a URI fragment or an already JSON-quoted string.

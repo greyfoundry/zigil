@@ -1,0 +1,10 @@
+Zigil
+Copyright 2026 Greyfoundry contributors
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+Design references are credited in docs/design.mdx. Reference projects are
+not runtime dependencies, and their implementation source is not distributed here.
+
+Optional native regex dependencies and their licences are listed in
+DEPENDENCIES.md and THIRD_PARTY_NOTICES.txt.

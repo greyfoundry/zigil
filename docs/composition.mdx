@@ -1,0 +1,53 @@
+---
+title: "Composition"
+description: "Native tuples, maps, tagged unions, refinements and explicit decoding changes."
+---
+
+Rules compose without allocating during native validation. `Tuple(.{ A, B })`
+uses a native tuple and a fixed-length JSON array. `Map(KeyRule, ValueRule, length)`
+uses Zig's ordered string ArrayHashMap and a JSON object. Validation borrows maps;
+decoded maps, keys and values belong to the decoding result. Do not deinit them
+separately. Map findings use the offending key as a field path segment.
+
+`Union(T, rules)` requires a native tagged union and exactly one rule per variant.
+Its JSON encoding is `{"tag":"variant_name","value":payload}`. Both members are
+required; unknown members/tags fail. Payload findings begin with `/value`.
+Declaration order controls struct diagnostics; tuple/sequence indices and map
+insertion order control collection diagnostics.
+
+`Refine(Child, predicate, message)` checks Child first, then calls the predicate.
+Use it for cross-field constraints on a struct. False produces `custom`; callback
+errors propagate. Callbacks are trusted synchronous code: traversal budgets cannot
+interrupt them or undo their side effects. Validation never mutates values.
+
+`Default(Child, fallback)` substitutes only an **absent object field** when it is
+that field's outermost rule. Explicit null is still decoded normally. The fallback
+has compile-time/static lifetime and must pass Child's constraints. Zig struct
+field defaults are not applied implicitly. Presence rules preserve missing, null,
+false, zero and empty values separately.
+
+`Transform(InputRule, OutputRule, callback)` explicitly changes decoding behavior.
+The callback receives the result arena allocator and an already validated input,
+then returns `OutputRule.Value` (or an error union). The output is validated too.
+Callbacks must return static data or data owned by that arena, including any
+retained input slices; never return stack storage or allocations from an unrelated
+allocator. On failure, arena allocations are reclaimed. Callback operational
+errors propagate. Native `validate` on this rule checks OutputRule and does not
+run the callback. String-to-number coercion can be written as an explicit
+transform; no coercion is enabled globally or by default.
+
+`Recursive(T, provider)` defers a compile-time provider returning a rule for T.
+This supports native trees without a runtime schema graph. Every recursive visit
+counts toward work and depth budgets, including cyclic borrowed native data.
+Provider re-entry also has a separate depth counter, so a provider that loops
+without advancing a field/index path terminates operationally instead of exhausting
+the native stack.
+No cycle is implicitly trusted or cached. Errors retain the full nested path.
+
+String lengths count bytes by default. Set `unit = .code_points` for Unicode
+scalar counts (UTF-8 must remain enabled). Neither mode counts graphemes or
+normalizes text. `Formatted(.uuid)`, `.ipv4`, `.ipv6` and `.uri` check local syntax:
+UUID means the 8-4-4-4-12 hexadecimal form with no version restriction; IP rules
+use the standard library and disallow IPv6 zone identifiers; URI requires an
+absolute ASCII URI accepted by the standard parser with valid percent escapes.
+These checks never perform DNS, network requests, identity or authorization checks.
