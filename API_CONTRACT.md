@@ -58,7 +58,7 @@ keyword and schema location. Diagnostics are fail-fast, with at most one issue.
 
 Default resource bounds are part of the reviewed contract and are documented in
 `docs/decoding.mdx` and `docs/runtime-schemas.mdx`. Valid inputs may exceed a budget
-and fail operationally. Raising limits is explicit. Work counts are logical
+and fail operationally. Raising limits is explicit; native, decoding and runtime depth have a hard cap of 256. Work counts are logical
 traversal/matching charges, not exact CPU instructions or deadlines. Arena quotas
 count cumulative underlying allocation requests, not only live user payload.
 

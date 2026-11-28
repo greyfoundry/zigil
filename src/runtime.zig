@@ -466,7 +466,7 @@ const Context = struct {
         evaluation.valid = false;
         if (self.finding == null) {
             const allocator = self.state.allocator();
-            self.finding = .{ .issue = .{ .code = .schema_validation, .path = try copyPath(allocator, self.path[0..self.path_len]), .message = message }, .keyword = keyword, .schema_location = try appendLocation(allocator, node.location, keyword, null) };
+            self.finding = .{ .issue = .{ .code = .schema_validation, .path = try copyPath(allocator, self.path[0..self.path_len]), .message = message }, .keyword = keyword, .schema_location = if (comptime std.mem.eql(u8, keyword, "false")) try allocator.dupe(u8, node.location) else try appendLocation(allocator, node.location, keyword, null) };
         }
     }
     fn initial(self: *Context, value: V) !Evaluation {

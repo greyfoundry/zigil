@@ -32,7 +32,7 @@
       "src/runtime.zig": "3553108f740cc8e6265d26711c6951b46916f33e7e3d744eb95305f97846ce7e",
       "src/schema.zig": "450faed10ed27b4420b986b65edf874793a07832f669326842b6ee894acc0726"
     },
-    "subsequent_metadata_change": "Baseline recorded before the final schema-export presence guard and package-contract allowlist refinements. Per-file hashes identify the measured sources; rerun for a candidate-wide baseline."
+    "subsequent_metadata_change": "Baseline recorded before final presence-export, diagnostic, recursive-budget and package allowlist refinements. Per-file hashes identify measured sources; this is not a candidate-wide fresh measurement."
   },
   "scope": "128 bounded native struct fixtures; identical first issue code/field and constraints. Fail-fast; five invalid fixture categories and one valid. Not a library-wide comparison.",
   "environment": {

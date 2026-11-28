@@ -165,6 +165,7 @@ const DecodeContext = struct {
     state: *State,
     path: []core.Segment,
     depth: usize = 0,
+    recursion_depth: usize = 0,
     issue: ?core.Issue = null,
     work: usize = 0,
     max_work: usize,
@@ -220,6 +221,9 @@ fn fromRule(comptime Rule: type, value: Value, ctx: *DecodeContext) anyerror!Rul
     switch (Rule.kind) {
         .refinement, .default => return fromRule(Rule.ChildRule, value, ctx),
         .recursive => {
+            if (ctx.recursion_depth == ctx.options.max_depth) return error.DepthLimitExceeded;
+            ctx.recursion_depth += 1;
+            defer ctx.recursion_depth -= 1;
             try ctx.charge(1);
             return fromRule(Rule.resolve(), value, ctx);
         },

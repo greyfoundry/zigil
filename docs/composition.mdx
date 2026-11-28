@@ -39,6 +39,9 @@ transform; no coercion is enabled globally or by default.
 `Recursive(T, provider)` defers a compile-time provider returning a rule for T.
 This supports native trees without a runtime schema graph. Every recursive visit
 counts toward work and depth budgets, including cyclic borrowed native data.
+Provider re-entry also has a separate depth counter, so a provider that loops
+without advancing a field/index path terminates operationally instead of exhausting
+the native stack.
 No cycle is implicitly trusted or cached. Errors retain the full nested path.
 
 String lengths count bytes by default. Set `unit = .code_points` for Unicode

@@ -38,7 +38,8 @@ pub const Issue = struct {
     message: []const u8,
 
     /// RFC 6901 JSON Pointer, borrowed from output. Root is the empty string.
-    /// No allocation; a short buffer returns NoSpaceLeft, never a partial result.
+    /// No allocation. Invalid UTF-8 names return InvalidUtf8. A short buffer
+    /// for a valid path returns NoSpaceLeft, never a partial result.
     pub fn jsonPointer(self: Issue, output: []u8) error{ NoSpaceLeft, InvalidUtf8 }![]const u8 {
         var offset: usize = 0;
         for (self.path) |segment| switch (segment) {
@@ -89,6 +90,7 @@ pub const ResourceError = error{
 pub const Context = struct {
     path: []Segment,
     depth: usize = 0,
+    recursion_depth: usize = 0,
     limits: Limits,
     work: usize = 0,
     bytes: usize = 0,
@@ -99,7 +101,7 @@ pub const Context = struct {
     }
 
     pub fn push(self: *Context, segment: Segment) ResourceError!void {
-        if (self.depth == self.limits.max_depth) return error.DepthLimitExceeded;
+        if (self.depth == self.limits.max_depth or self.depth == 256) return error.DepthLimitExceeded;
         if (self.depth == self.path.len) return error.PathCapacityExceeded;
         self.path[self.depth] = segment;
         self.depth += 1;
@@ -554,6 +556,11 @@ pub fn Recursive(comptime T: type, comptime provider: fn () type) type {
         pub const resolve = provider;
         pub const Value = T;
         fn check(value: T, ctx: *Context) anyerror!?Issue {
+            // A provider can re-enter without crossing a field/index edge.
+            // Bound those calls independently from the visible issue path.
+            if (ctx.recursion_depth == ctx.limits.max_depth or ctx.recursion_depth == 256) return error.DepthLimitExceeded;
+            ctx.recursion_depth += 1;
+            defer ctx.recursion_depth -= 1;
             const Rule = provider();
             if (Rule.Value != T) @compileError("Zigil: recursive provider has the wrong value type");
             return checkRule(Rule, value, ctx);

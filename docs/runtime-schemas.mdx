@@ -15,8 +15,11 @@ Compiled schemas are immutable after compilation and can be reused concurrently
 with independent validation allocators. Each result owns its diagnostics, paths
 and schema locations; it may outlive the compiled schema and original input.
 A finding contains a machine issue code, keyword, schema location and typed
-instance path. Values are not included in messages. Object keys and missing field
-names appear in paths, so apply logging/redaction policy to paths too.
+instance path. Boolean-false schemas use the label `false` and point at the
+boolean schema node itself, not a synthetic property. Values are not included in messages. Object keys and missing field
+names appear in paths, so apply logging/redaction policy to paths too. Schema locations contain identifiers
+from the schema and are untrusted text, not instructions to fetch/open a URI;
+applications must not automatically navigate arbitrary schemes.
 
 Only the declared Draft 2020-12 profile is implemented. Core references (`$id`,
 `$anchor`, `$ref`, `$dynamicAnchor`, `$dynamicRef`), validation, applicators and

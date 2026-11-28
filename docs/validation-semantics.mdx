@@ -82,7 +82,7 @@ The default `validate` uses these values:
 
 | Limit | Default | Accounting |
 | --- | --- | --- |
-| `max_depth` | 64 | Struct-field and collection-index path edges |
+| `max_depth` | 64 | Struct-field/index path edges and recursive-provider re-entry, bounded independently |
 | `max_work` | 1,000,000 | Rule visits, compared enum choices and charged text bytes |
 | `max_bytes` | 1,048,576 | Sum of lengths passed to built-in String rules, before text processing |
 | `max_items` | 100,000 | Sum of lengths passed to built-in arrays/slices/tuples/maps, before iteration |
@@ -91,7 +91,8 @@ Work charges one unit per rule visit, one per compared enum choice, the string
 length for UTF-8 checking (again for an explicit code-point scan), and the smaller of the value/constraint length for each
 configured prefix or suffix check. These are deterministic logical units, not
 CPU-time estimates. Counters are aggregate across siblings and use overflow-safe
-subtraction before incrementing. The root has path depth zero.
+subtraction before incrementing. The root has path depth zero. Native path/provider traversal is hard-capped at 256. A larger configured ceiling
+still permits shallow native values but never raises that actual traversal cap.
 
 Errors are `PathCapacityExceeded`, `DepthLimitExceeded`, `WorkLimitExceeded`,
 `InputLimitExceeded`, and `ItemLimitExceeded`, plus any custom callback errors.

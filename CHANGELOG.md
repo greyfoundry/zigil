@@ -2,6 +2,10 @@
 
 ## Unreleased — 1.0.0-rc.1 review candidate
 
+- Bounded recursive-provider re-entry independently from visible field paths in native validation and decoding.
+
+- Corrected boolean-schema diagnostic locations to identify the actual boolean node.
+
 - Rejected ambiguous nested/root presence export instead of broadening wire nullability.
 
 - Prepared a proposed API/migration contract, non-exhaustive machine codes, explicit readiness gates and audited source-candidate generation with checksums, SPDX inventory and compiler/commit provenance.

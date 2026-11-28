@@ -72,6 +72,9 @@ fn exercise(allocator: std.mem.Allocator) !void {
     var bad = try schema.validate(allocator, "{\"x\":0.31}", .{});
     defer bad.deinit();
     try t.expect(bad.outcome == .invalid);
+    var rejected = try schema.validate(allocator, "{\"extra\":true}", .{});
+    defer rejected.deinit();
+    try t.expect(rejected.outcome == .invalid);
 }
 test "runtime compilation, references, decimals and findings clean up every allocation failure" {
     try t.checkAllAllocationFailures(a, exercise, .{});
@@ -135,4 +138,13 @@ test "malformed URI references fail before registry or pointer resolution" {
     inline for (.{ "{\"$ref\":\"https://example.org/%zz\"}", "{\"$id\":\"https://example.org/has space\"}", "{\"$ref\":\"#/%\"}" }) |source| {
         try t.expectError(error.InvalidSchemaUri, z.runtime.compile(a, source, &.{}, .{}));
     }
+}
+
+test "boolean schema failures point at the boolean node rather than a synthetic keyword" {
+    var schema = try z.runtime.compile(a, "{\"additionalProperties\":false}", &.{}, .{});
+    defer schema.deinit();
+    var result = try schema.validate(a, "{\"extra\":1}", .{});
+    defer result.deinit();
+    try t.expectEqualStrings("false", result.outcome.invalid.keyword);
+    try t.expect(std.mem.endsWith(u8, result.outcome.invalid.schema_location, "#/additionalProperties"));
 }

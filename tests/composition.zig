@@ -180,3 +180,18 @@ test "binary native map keys cannot be silently rendered as Unicode JSON Pointer
     var buffer: [32]u8 = undefined;
     try t.expectError(error.InvalidUtf8, finding.jsonPointer(&buffer));
 }
+
+fn acceptBool(_: bool) bool {
+    return true;
+}
+fn nonProgressingProvider() type {
+    return z.Refine(z.Recursive(bool, nonProgressingProvider), acceptBool, "unused");
+}
+test "recursive providers without field edges terminate before exhausting the native stack" {
+    const Loop = z.Recursive(bool, nonProgressingProvider);
+    var path: [1]z.Segment = undefined;
+    try t.expectError(error.DepthLimitExceeded, z.validateWithLimits(Loop, true, &path, .{ .max_depth = 8 }));
+    try t.expectError(error.DepthLimitExceeded, z.decodeJson(Loop, a, "true", .{ .max_depth = 8 }));
+    try t.expectEqual(@as(?z.Issue, null), try z.validateWithLimits(z.Boolean(null), true, &path, .{ .max_depth = 257 }));
+    try t.expectError(error.DepthLimitExceeded, z.validateWithLimits(Loop, true, &path, .{ .max_depth = std.math.maxInt(usize) }));
+}

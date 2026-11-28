@@ -20,7 +20,8 @@ These are bounded mutation campaigns, not a claim of exhaustive coverage-guided 
 Run a longer campaign with `zig build test -Dfuzz-rounds=100
 -Dschema-regex=true -Doptimize=ReleaseSafe`. This executes 176,800 deterministic
 cases with leak checking. The multiplier is bounded to 1..100. CI runs the default
-campaign on pull requests and a longer campaign on manual/scheduled runs.
+campaign on pull requests. The workflow defines longer manual/weekly campaigns
+that become available when it reaches the default branch; no merge is implied.
 
 `zig build bench -Doptimize=ReleaseSafe` measures a small, bounded native struct
 against direct Zig checks with the same UTF-8/length/integer constraints, first
