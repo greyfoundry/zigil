@@ -22,7 +22,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Repository metadata
-        run: python3 tools/check_repository.py
+        run: |
+          python3 tools/check_repository.py
+          python3 tools/check-conformance-source.py
       - name: Validate documentation and internal links
         working-directory: docs
         run: |
@@ -88,6 +90,12 @@ jobs:
           zig build check test docs run-examples --summary all
           zig build test -Doptimize=ReleaseSafe --summary all
           bash tools/check-consumer.sh -Doptimize=ReleaseSafe --summary all
+
+      - name: Optional native schema engine and official conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          zig build test conformance -Dschema-regex=true -Doptimize=ReleaseSafe --summary all
 
       - name: Independent schema export oracle
         if: runner.os == 'Linux'

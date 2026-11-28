@@ -11,14 +11,15 @@ releases and no hosted Zigil documentation deployment.
 | --- | --- |
 | Typed constraints | Strings/bytes, numbers, booleans, enums, optionals, structs, arrays/slices and custom predicates implemented |
 | Errors | Fail-fast typed field/index paths borrowing caller storage; bounded traversal, operational errors and caller-buffer JSON Pointer rendering implemented |
-| Verification | 55 runtime cases and 9 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
+| Verification | 68 runtime cases and 9 expected compile-failure checks pass locally on Zig 0.17.1, Debug and ReleaseSafe |
 | Package | Allowlisted package builds/runs from an independent project |
 | Platforms | x86_64 Linux executed; aarch64 Linux, x86_64 Windows and aarch64 macOS cross-compiled |
 | Mintlify | Sources and internal link check available; local full validation blocked by an OS interface-query error |
 | Strict decoding | P3 implemented: owning JSON, strict fields, explicit presence, exact numbers and resource limits |
 | Composition, transforms and unions | P4 implemented, including bounded recursive trees and explicit defaults |
 | JSON Schema export | P5 implemented for declared rules; 34 independent comparisons |
-| External-schema evaluation and OpenAPI | P6-P7; planned, no conformance claimed |
+| External-schema evaluation | P6 declared profile: 1,319 mandatory fixtures pass locally; optional exclusions documented |
+| OpenAPI fragments | P7; planned |
 
 P0 compared three compiler-tested declaration alternatives sharing a validation
 kernel. The external native-type/rule-map hybrid was selected for type ownership

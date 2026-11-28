@@ -288,3 +288,7 @@ test {
 test {
     _ = @import("schema.zig");
 }
+
+test {
+    _ = @import("runtime.zig");
+}

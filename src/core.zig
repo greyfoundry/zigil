@@ -27,6 +27,7 @@ pub const Code = enum {
     literal_mismatch,
     invalid_format,
     union_tag,
+    schema_validation,
 };
 
 pub const Issue = struct {

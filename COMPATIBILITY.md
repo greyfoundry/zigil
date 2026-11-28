@@ -19,11 +19,13 @@ using explicit ownership, retaining consumer tests and reviewing compiler change
 It does not mean promising source compatibility with an unreleased language.
 No compatibility shim, support for older compilers, or nightly support is provided.
 
-Native values are validated without coercion. String length means bytes. Float
+Native values are validated without coercion. String length means bytes unless code-point units are explicitly selected. Float
 bounds are inclusive and finite. Enum rules reject undeclared tags of
 non-exhaustive enums. `Optional` represents native `?T`, so absent versus explicit
-null is not a distinction in this layer. Strict JSON decoding is implemented. Tagged-union validation, error accumulation,
-JSON Schema and OpenAPI generation remain later milestones.
+null is not a distinction in this layer. Strict owning JSON decoding, tagged unions, composition and bounded recursive
+rules are implemented. Draft 2020-12 export and an offline runtime evaluator
+implement their declared profiles; see docs/json-schema.mdx and docs/runtime-schemas.mdx.
+Error accumulation is not part of this fail-fast API. OpenAPI fragments follow in P7.
 
 Before changing a public contract, update examples, regression tests, ownership
 documentation and the roadmap. No performance benchmarks have been established.

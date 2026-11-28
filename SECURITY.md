@@ -16,7 +16,9 @@ values or invalid enum bit patterns safe. Bound payload size before decoding and
 set string/collection length limits for external data. UTF-8 validation is enabled
 by default; floating-point rules reject NaN and infinity.
 
-Built-in issues contain static messages and schema field names, not raw input.
+Built-in issues contain static messages and paths, without offending values.
+Paths can contain attacker-controlled object keys; treat them as untrusted and
+apply application logging/redaction policy. Runtime schema findings own their storage.
 Applications own logging, redaction and custom-validator behavior. Keep the caller's
 path storage alive and unchanged while reading an issue; do not share writable
 path storage between concurrent calls. See `docs/errors-ownership.mdx` for the full contract.

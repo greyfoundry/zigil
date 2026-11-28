@@ -8,6 +8,14 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const regex_enabled = b.option(bool, "schema-regex", "Enable the optional native bounded JSON Schema pattern backend") orelse false;
+    const features = b.addOptions();
+    features.addOption(bool, "schema_regex", regex_enabled);
+    zigil.addOptions("features", features);
+    if (regex_enabled) {
+        if (b.lazyDependency("ezi_gex", .{ .target = target, .optimize = optimize })) |regex|
+            zigil.addImport("ezi_gex", regex.module("ezi_gex"));
+    }
     const test_module = b.createModule(.{
         .root_source_file = b.path("tests/validation.zig"),
         .target = target,
@@ -70,6 +78,16 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.step("schema-oracle", "Emit independent schema export fixtures").dependOn(&b.addRunArtifact(oracle).step);
+    const conformance = b.addExecutable(.{
+        .name = "conformance",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/conformance.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "zigil", .module = zigil }},
+        }),
+    });
+    b.step("conformance", "Run pinned official Draft 2020-12 fixtures").dependOn(&b.addRunArtifact(conformance).step);
     const api_docs = b.addObject(.{ .name = "zigil-docs", .root_module = zigil });
     const install_docs = b.addInstallDirectory(.{
         .source_dir = api_docs.getEmittedDocs(),

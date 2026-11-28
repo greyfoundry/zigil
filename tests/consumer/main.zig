@@ -17,6 +17,11 @@ pub fn main() !void {
     var schema = try z.exportSchema(z.Int(u128, .{}), std.heap.page_allocator, .{});
     defer schema.deinit();
     if (schema.json.len == 0) return error.EmptySchema;
+    var compiled = try z.runtime.compile(std.heap.page_allocator, "{\"type\":\"boolean\"}", &.{}, .{});
+    defer compiled.deinit();
+    var validated = try compiled.validate(std.heap.page_allocator, "true", .{});
+    defer validated.deinit();
+    if (validated.outcome != .valid) return error.InvalidExternalSchemaValue;
     var path: [2]z.Segment = undefined;
     if ((try z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path)) != null)
         return error.UnexpectedIssue;

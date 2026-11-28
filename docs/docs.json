@@ -26,6 +26,7 @@
           "composition",
           "errors-ownership",
           "json-schema",
+          "runtime-schemas",
           "compatibility",
           "security"
         ]

@@ -12,7 +12,7 @@ deployment require separate authorization. No dates or 1.0 readiness are promise
 | P3 | Strict JSON decoding, presence/null, fidelity, budgets and ownership | Implemented; native tests and consumer verification |
 | P4 | Composition, tagged unions, tuples/maps, refinements, defaults and transforms | Implemented; bounded recursion and local syntax formats tested |
 | P5 | Deterministic Draft 2020-12 export; explicit unsupported conversion | Implemented for declared representable rules; independent comparisons pass |
-| P6 | Optional external-schema evaluator, offline registries and pinned conformance | Planned |
+| P6 | Optional external-schema evaluator, offline registries and pinned conformance | Implemented declared 2020-12 profile; 1,319 mandatory fixtures pass locally |
 | P7 | OpenAPI 3.1/3.2 fragments, fuzzing, benchmarks and platform hardening | Planned |
 | P8 | Stable contracts, release candidate, support policy and Zig 1.0 migration | Planned |
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added offline bounded Draft 2020-12 evaluation, exact numeric comparisons, evaluated annotations, safe registries and an optional pinned native NFA backend. Added the pinned official conformance corpus and provenance checks.
+
 - Added deterministic Draft 2020-12 input/output schema export, recursive definitions, explicit unsupported-conversion errors and independent oracle checks.
 
 - Added native tuple/map/tagged-union composition, refinements, defaults, explicit decoding transforms, bounded recursive rules, code-point lengths and local syntax formats.
