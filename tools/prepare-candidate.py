@@ -2,6 +2,7 @@
 """Prepare local review artifacts from a clean tree. Never tags or publishes."""
 import datetime
 import hashlib
+import io
 import json
 import os
 import re
@@ -21,18 +22,36 @@ def sha(path):
 
 if git('status','--porcelain'):
     raise SystemExit('Commit the review checkpoint first; candidate provenance requires a clean tree.')
+commit=git('rev-parse','HEAD')
+source_tree=git('rev-parse',commit+'^{tree}')
 zig=os.environ.get('ZIG','zig')
 zig=str(Path(zig).resolve()) if '/' in zig else shutil.which(zig)
 if not zig:raise SystemExit('Set ZIG to the verified compiler.')
 compiler=subprocess.check_output([zig,'version'],text=True).strip()
 if compiler!='0.17.1':raise SystemExit('Candidate baseline is Zig 0.17.1.')
-version=re.search(r'\.version\s*=\s*"([^"]+)"',(root/'build.zig.zon').read_text()).group(1)
+version=re.search(r'\.version\s*=\s*"([^"]+)"',git('show',commit+':build.zig.zon')).group(1)
 if not re.fullmatch(r'\d+\.\d+\.\d+-rc\.\d+',version):raise SystemExit('Expected an explicit unreleased release-candidate version.')
 output=root/'zig-out/candidate'
 output.mkdir(parents=True,exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='zigil-package-') as directory:
     cache=Path(directory)/'cache'
-    package_hash=subprocess.check_output([zig,'fetch',str(root)],cwd=root,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(cache)),text=True).strip()
+    snapshot=Path(directory)/'source'
+    snapshot.mkdir()
+    # Package immutable committed bytes, even if the working branch changes
+    # while Zig is preparing its cache. Never label mixed working-tree data.
+    committed=subprocess.check_output(['git','archive','--format=tar',commit],cwd=root)
+    with tarfile.open(fileobj=io.BytesIO(committed),mode='r:') as archive:
+        for member in archive:
+            path=Path(member.name)
+            if path.is_absolute() or '..' in path.parts or member.issym() or member.islnk():
+                raise SystemExit(f'Unsupported source snapshot entry: {member.name}')
+            target=snapshot/path
+            if member.isdir():target.mkdir(parents=True,exist_ok=True)
+            elif member.isfile():
+                target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes(archive.extractfile(member).read())
+            else:raise SystemExit(f'Unsupported archive entry: {member.name}')
+    package_hash=subprocess.check_output([zig,'fetch',str(snapshot)],cwd=root,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(cache)),text=True).strip()
     source=cache/'p'/f'{package_hash}.tar.gz'
     allowed={'build.zig','build.zig.zon','src','examples','LICENSE','NOTICE','THIRD_PARTY_NOTICES.txt','DEPENDENCIES.md','README.md','API_CONTRACT.md','COMPATIBILITY.md','CHANGELOG.md','MIGRATION.md','SECURITY.md','AI_DISCLOSURE.md','RELEASING.md','MATURITY.md'}
     required={'build.zig','build.zig.zon','src/root.zig','src/runtime.zig','src/openapi.zig','LICENSE','NOTICE','THIRD_PARTY_NOTICES.txt','API_CONTRACT.md','MIGRATION.md','SECURITY.md'}
@@ -50,10 +69,9 @@ with tempfile.TemporaryDirectory(prefix='zigil-package-') as directory:
     shutil.copyfile(source,archive_path)
 
 created=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds').replace('+00:00','Z')
-commit=git('rev-parse','HEAD')
 manifest={
     'status':'unreleased review candidate; no human or security approval implied',
-    'version':version,'source_commit':commit,'source_tree':git('rev-parse','HEAD^{tree}'),
+    'version':version,'source_commit':commit,'source_tree':source_tree,
     'source_url':f'https://github.com/greyfoundry/zigil/tree/{commit}',
     'created':created,'zig_package_hash':package_hash,'archive_sha256':sha(archive_path),
     'compiler':{'version':compiler,'binary_sha256':sha(Path(zig))},
