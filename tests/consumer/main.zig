@@ -22,6 +22,16 @@ pub fn main() !void {
     var validated = try compiled.validate(std.heap.page_allocator, "true", .{});
     defer validated.deinit();
     if (validated.outcome != .valid) return error.InvalidExternalSchemaValue;
+    var fragment = try z.openapi.exportSchema(z.Boolean(null), std.heap.page_allocator, .{});
+    defer fragment.deinit();
+    if (fragment.json.len == 0) return error.EmptyOpenApiFragment;
+    if (z.runtime.regex_enabled) {
+        var pattern = try z.runtime.compile(std.heap.page_allocator, "{\"pattern\":\"^[A-Z]+$\"}", &.{}, .{});
+        defer pattern.deinit();
+        var match = try pattern.validate(std.heap.page_allocator, "\"ABC\"", .{});
+        defer match.deinit();
+        if (match.outcome != .valid) return error.PatternMismatch;
+    }
     var path: [2]z.Segment = undefined;
     if ((try z.validate(Rule, .{ .workers = 4, .names = &.{"worker"} }, &path)) != null)
         return error.UnexpectedIssue;

@@ -184,3 +184,21 @@ test "exact float big-integer allocation failures release all state" {
     try std.testing.expectError(error.AllocationLimitExceeded, z.decodeJson(Rule, std.testing.allocator, "{}", .{ .max_allocated_bytes = @sizeOf(z.json.State) + 1 }));
     try std.testing.expectError(error.WorkLimitExceeded, z.decodeJson(Rule, std.testing.allocator, "{}", .{ .validation = .{ .max_work = 0 } }));
 }
+
+test "exact float decoding rejects subnormal rounding at half a representable step" {
+    var exact = try z.decodeJson(z.Float(f16, .{}), std.testing.allocator, "0.000000059604644775390625", .{});
+    defer exact.deinit();
+    try std.testing.expect(exact.outcome == .valid);
+    var rounded = try z.decodeJson(z.Float(f16, .{}), std.testing.allocator, "0.0000000894069671630859375", .{});
+    defer rounded.deinit();
+    try std.testing.expect(rounded.outcome == .invalid);
+}
+
+test "extended precision floats count their explicit leading bit correctly" {
+    var result = try z.decodeJson(z.Float(f80, .{}), std.testing.allocator, "18446744073709551617", .{});
+    defer result.deinit();
+    try std.testing.expect(result.outcome == .invalid);
+    var exact = try z.decodeJson(z.Float(f80, .{}), std.testing.allocator, "18446744073709551616", .{});
+    defer exact.deinit();
+    try std.testing.expect(exact.outcome == .valid);
+}

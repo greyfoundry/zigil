@@ -22,6 +22,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .imports = &.{.{ .name = "zigil", .module = zigil }},
     });
+    const campaign = b.addOptions();
+    const rounds = b.option(usize, "fuzz-rounds", "Fixed-seed campaign multiplier, 1 to 100") orelse 1;
+    if (rounds < 1 or rounds > 100) @panic("fuzz-rounds must be between 1 and 100");
+    campaign.addOption(usize, "rounds", rounds);
+    test_module.addOptions("campaign", campaign);
     const tests = b.addTest(.{ .root_module = test_module });
     const test_step = b.step("test", "Run public API tests");
     test_step.dependOn(&b.addRunArtifact(tests).step);
@@ -54,7 +59,7 @@ pub fn build(b: *std.Build) void {
     check.dependOn(&tests.step);
     const examples = b.step("examples", "Compile all public examples");
     const run_examples = b.step("run-examples", "Run all public examples");
-    inline for (.{ "basic", "json", "schema" }) |name| {
+    inline for (.{ "basic", "json", "schema", "api" }) |name| {
         const exe = b.addExecutable(.{
             .name = name,
             .root_module = b.createModule(.{
@@ -88,6 +93,18 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.step("conformance", "Run pinned official Draft 2020-12 fixtures").dependOn(&b.addRunArtifact(conformance).step);
+    const benchmark = b.addExecutable(.{
+        .name = "zigil-bench",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("bench/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "zigil", .module = zigil }},
+        }),
+    });
+    const bench_step = b.step("bench", "Measure native and equivalent direct bounded validation");
+    bench_step.dependOn(&b.addRunArtifact(benchmark).step);
+    b.step("bench-build", "Compile and install the benchmark without running it").dependOn(&b.addInstallArtifact(benchmark, .{}).step);
     const api_docs = b.addObject(.{ .name = "zigil-docs", .root_module = zigil });
     const install_docs = b.addInstallDirectory(.{
         .source_dir = api_docs.getEmittedDocs(),

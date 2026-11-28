@@ -47,7 +47,7 @@ Use `zig fmt`, the implemented root build/test steps, compiled examples, failure
 ## Current native checks
 
 ```sh
-zig fmt --check build.zig build.zig.zon src examples tests
+zig fmt --check build.zig build.zig.zon src examples tests bench
 zig build check test docs run-examples
 zig build test -Doptimize=ReleaseSafe
 bash tools/check-consumer.sh

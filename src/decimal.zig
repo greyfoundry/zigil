@@ -113,10 +113,14 @@ pub const Decimal = struct {
             // the significand exceeds the target precision.
             for (0..@as(usize, @intCast(self.exponent))) |_| {
                 try coefficient.mul(&coefficient, &five);
-                if (significantBits(coefficient) > std.math.floatMantissaBits(T) + 1) return false;
+                if (significantBits(coefficient) > std.math.floatFractionalBits(T) + 1) return false;
             }
         }
-        return significantBits(coefficient) <= std.math.floatMantissaBits(T) + 1;
+        // Subnormal spacing is fixed. A short significand can still require
+        // rounding when its lowest set bit lies below the smallest subnormal.
+        const lowest_bit_exponent = self.exponent + @as(i64, @intCast(trailingZeroBits(coefficient)));
+        const minimum_exponent = std.math.floatExponentMin(T) - std.math.floatFractionalBits(T);
+        return lowest_bit_exponent >= minimum_exponent and significantBits(coefficient) <= std.math.floatFractionalBits(T) + 1;
     }
 
     pub fn multipleOf(a: Decimal, b: Decimal, allocator: std.mem.Allocator) !bool {
@@ -145,6 +149,10 @@ pub const Decimal = struct {
 };
 
 fn significantBits(number: Big) usize {
+    return number.bitCountAbs() - trailingZeroBits(number);
+}
+
+fn trailingZeroBits(number: Big) usize {
     var trailing: usize = 0;
     for (number.toConst().limbs) |limb| {
         if (limb == 0) trailing += @bitSizeOf(@TypeOf(limb)) else {
@@ -152,5 +160,5 @@ fn significantBits(number: Big) usize {
             break;
         }
     }
-    return number.bitCountAbs() - trailing;
+    return trailing;
 }

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed strict float decoding at subnormal half-step boundaries and f80 explicit-leading-bit precision; added regression tests.
+
+- Added OpenAPI 3.1/3.2 schema fragments, deterministic bounded mutation campaigns, longer scheduled/manual CI campaigns and a reproducible direct/native benchmark.
+
 - Added offline bounded Draft 2020-12 evaluation, exact numeric comparisons, evaluated annotations, safe registries and an optional pinned native NFA backend. Added the pinned official conformance corpus and provenance checks.
 
 - Added deterministic Draft 2020-12 input/output schema export, recursive definitions, explicit unsupported-conversion errors and independent oracle checks.

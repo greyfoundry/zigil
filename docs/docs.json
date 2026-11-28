@@ -28,7 +28,9 @@
           "json-schema",
           "runtime-schemas",
           "compatibility",
-          "security"
+          "security",
+          "openapi",
+          "hardening"
         ]
       },
       {

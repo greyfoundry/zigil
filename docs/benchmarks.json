@@ -1,0 +1,90 @@
+{
+  "scope": "128 bounded native struct fixtures; identical first issue code/field and constraints. Fail-fast; five invalid fixture categories and one valid. Not a library-wide comparison.",
+  "environment": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "compiler": "0.17.1",
+    "mode": "ReleaseSafe",
+    "shared_host": true
+  },
+  "method": {
+    "warmup_iterations_per_implementation": 5000,
+    "sample_order": "direct then zigil, repeated; potential order bias",
+    "clock": "monotonic awake",
+    "fresh_local_and_global_build_cache": true,
+    "build_wall_seconds": 119.60326873999998,
+    "binary_bytes": 4338472,
+    "runtime_peak_rss_kib": 9088
+  },
+  "metadata": {
+    "zig": "0.17.1",
+    "mode": "safe",
+    "iterations_per_sample": 100000,
+    "samples": 21,
+    "fixtures": 128,
+    "invalid_fixtures": 112,
+    "seed": "0x5a4947494c",
+    "native_validation_allocations": 0,
+    "direct_allocations": 0,
+    "example_decode_cumulative_requested_bytes": 6253,
+    "checksum": 3683750
+  },
+  "batch_per_operation_nanoseconds": {
+    "direct": {
+      "median": 4.81195,
+      "p95_of_21_batch_means": 5.63578,
+      "samples": [
+        4.86624,
+        5.39593,
+        5.60634,
+        4.47736,
+        5.00144,
+        4.62949,
+        4.47747,
+        4.91872,
+        4.75287,
+        4.91181,
+        5.15076,
+        4.54476,
+        4.53805,
+        7.16166,
+        4.81195,
+        4.51973,
+        4.53184,
+        4.9111,
+        5.63578,
+        4.55838,
+        4.61456
+      ]
+    },
+    "zigil": {
+      "median": 6.90007,
+      "p95_of_21_batch_means": 14.42386,
+      "samples": [
+        6.9908,
+        7.61062,
+        6.81895,
+        7.60231,
+        6.14605,
+        6.71329,
+        23.02606,
+        6.67173,
+        14.42386,
+        6.55054,
+        6.90007,
+        6.48394,
+        6.52731,
+        6.61655,
+        6.54484,
+        6.41645,
+        7.98699,
+        7.46912,
+        8.35613,
+        7.3905,
+        7.36525
+      ]
+    }
+  },
+  "limits": "Batch means are not individual-operation tail latency. Cold build time includes standard-library compilation and link work. RSS is whole-process peak, not allocation count. Fixed sample order and a shared host limit comparisons. No regression threshold or cross-language speed claim."
+}

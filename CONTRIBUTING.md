@@ -7,7 +7,7 @@ concrete consumer example and tests for its failure behavior.
 Install Zig 0.17.1, then run:
 
 ```sh
-zig fmt --check build.zig build.zig.zon src examples tests
+zig fmt --check build.zig build.zig.zon src examples tests bench
 zig build check test docs run-examples
 zig build test -Doptimize=ReleaseSafe
 bash tools/check-consumer.sh
@@ -19,12 +19,17 @@ overflowing input literals. `zig build docs` writes Zig's native reference to
 builds a separate project in a temporary directory. It needs Bash and tar.
 Set `ZIG` to a compiler path if it is not on PATH.
 
+Run `zig build test conformance -Dschema-regex=true -Doptimize=ReleaseSafe` for
+the optional schema engine and `python3 tools/check-conformance-source.py` for
+fixture provenance. The independent export oracle uses jsonschema==4.26.0.
+
 Keep changes focused. Describe the problem, resulting behavior, ownership and
 compatibility effects, actual verification, and unresolved limitations. For a bug
 fix, add a regression case exercising the public import. Prefer literal expected
 paths and error codes over expectations derived from the implementation.
 
-No runtime dependencies are currently needed. Before adding one, explain what the
+Core builds use the standard library; the optional pinned native NFA is documented
+in DEPENDENCIES.md. Before adding another dependency, explain what the
 standard library cannot provide and review provenance, maintenance, licences,
 transitive dependencies and version pins. Do not weaken validation to make a test
 pass. Store working plans, references and raw research in ignored `.private/`.

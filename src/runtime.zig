@@ -109,7 +109,7 @@ pub const Compiled = struct {
         const object = value.object;
         if (object.get("$schema")) |dialect| {
             if (dialect != .string) return error.InvalidSchema;
-            if (std.mem.eql(u8, dialect.string, @import("schema.zig").dialect)) {
+            if (std.mem.eql(u8, dialect.string, @import("schema.zig").dialect) or std.mem.eql(u8, dialect.string, @import("openapi.zig").dialect)) {
                 node.vocabulary = .{};
             } else {
                 const meta = self.raw_documents.get(dialect.string) orelse return error.UnsupportedDialect;
@@ -335,6 +335,7 @@ fn knownType(name: []const u8) bool {
     return false;
 }
 fn knownVocabulary(name: []const u8) bool {
+    if (std.mem.eql(u8, name, "https://spec.openapis.org/oas/3.1/vocab/base")) return true;
     inline for (.{ "core", "applicator", "unevaluated", "validation", "meta-data", "format-annotation", "content" }) |vocabulary| if (std.mem.eql(u8, name, "https://json-schema.org/draft/2020-12/vocab/" ++ vocabulary)) return true;
     return false;
 }

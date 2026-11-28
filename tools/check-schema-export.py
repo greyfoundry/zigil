@@ -7,8 +7,11 @@ import subprocess
 from pathlib import Path
 from jsonschema import Draft202012Validator
 
-assert importlib.metadata.version("jsonschema") == "4.26.0", "install jsonschema==4.26.0"
 root = Path(__file__).resolve().parent.parent
+for requirement in (root/"tools/oracle-requirements.txt").read_text().splitlines():
+    if not requirement or requirement.startswith("#"): continue
+    name,version=requirement.split("==")
+    assert importlib.metadata.version(name)==version,f"install -r tools/oracle-requirements.txt ({name})"
 result = subprocess.run([os.environ.get("ZIG", "zig"), "build", "schema-oracle"], cwd=root, text=True, capture_output=True, check=True)
 count = 0
 for line in result.stderr.splitlines():

@@ -292,3 +292,11 @@ test {
 test {
     _ = @import("runtime.zig");
 }
+
+test {
+    _ = @import("openapi.zig");
+}
+
+test {
+    _ = @import("fuzz.zig");
+}

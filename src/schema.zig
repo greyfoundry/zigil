@@ -49,14 +49,14 @@ const Builder = struct {
         return .{ .object = .empty };
     }
     fn array(self: *Builder) V {
-        return .{ .array = .init(self.state.allocator()) };
+        return .{ .array = if (@hasDecl(std.json.Array, "init")) .init(self.state.allocator()) else .empty };
     }
     fn put(self: *Builder, value: *V, key: []const u8, item: V) !void {
         try value.object.put(self.state.allocator(), key, item);
     }
     fn append(self: *Builder, value: *V, item: V) !void {
-        _ = self;
-        try value.array.append(item);
+        // Actual std.json.Array churn observed by the pinned advisory compiler.
+        if (@hasDecl(std.json.Array, "init")) try value.array.append(item) else try value.array.append(self.state.allocator(), item);
     }
     fn number(self: *Builder, value: anytype) !V {
         return .{ .number_string = try std.fmt.allocPrint(self.state.allocator(), "{d}", .{value}) };
